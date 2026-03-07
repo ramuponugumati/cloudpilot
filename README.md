@@ -50,7 +50,7 @@ Natural language interface to your AWS infrastructure:
 ### 12 Scanning Skills
 | Skill | Description |
 |-------|-------------|
-| 💰 cost-anomaly | Spending spikes, week-over-week changes, new services |
+| 💰 cost-anomaly | Spending spikes, week-over-week changes, new services, 3-month spend overview with bar chart |
 | 🧟 zombie-hunter | Idle EC2, unattached EBS, unused EIPs/NATs |
 | 🛡️ security-posture | GuardDuty, Security Hub, open ports, public S3, old IAM keys |
 | 📊 capacity-planner | ODCR utilization, SageMaker capacity, EC2 quotas |
@@ -68,6 +68,17 @@ Natural language interface to your AWS infrastructure:
 - Detects anti-patterns (single-AZ RDS, public databases, open security groups, missing backups)
 - Recommends managed service alternatives for self-managed EC2 workloads
 - Generates Mermaid diagrams rendered inline in the browser
+
+### IaC Generation
+
+### Cost Overview Dashboard
+The cost-anomaly skill automatically pulls 3 months of spend data from AWS Cost Explorer and generates:
+- Total spend and average monthly cost (like Cost Explorer's overview)
+- Top 5 services by spend with per-service monthly breakdown
+- Mermaid bar chart rendered inline in the browser showing month-over-month trends
+- Sum and average aggregates across the 3-month window
+
+Try it: *"Run cost-anomaly scan"* or `cloudpilot scan cost-anomaly`
 
 ### IaC Generation
 - **CDK Python** — AWS CDK v2 constructs

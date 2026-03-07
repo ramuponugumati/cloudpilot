@@ -131,4 +131,36 @@ TOOL_DEFINITIONS = [
             },
         }
     },
+    {
+        "toolSpec": {
+            "name": "aws_docs_search",
+            "description": "Search official AWS documentation for authoritative technical details, service guides, API references, best practices, quotas, and limits. Use this when you need to verify specifics or cite official AWS guidance.",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "Search query for AWS documentation (e.g., 'Lambda concurrency limits', 'S3 lifecycle policies', 'VPC peering vs Transit Gateway')"},
+                        "max_results": {"type": "integer", "description": "Maximum results to return (default 5)", "default": 5},
+                    },
+                    "required": ["query"],
+                }
+            },
+        }
+    },
+    {
+        "toolSpec": {
+            "name": "aws_blog_search",
+            "description": "Search AWS blog posts for latest service launches, feature announcements, architecture patterns, and best practices. Use this when users ask about new features, recent launches, or want to know what's new in a service.",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "Search query for AWS blog (e.g., 'Bedrock agents launch', 'new S3 features 2025', 'Aurora Serverless v2')"},
+                        "max_results": {"type": "integer", "description": "Maximum results to return (default 5)", "default": 5},
+                    },
+                    "required": ["query"],
+                }
+            },
+        }
+    },
 ]

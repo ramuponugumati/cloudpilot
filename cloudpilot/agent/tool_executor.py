@@ -143,5 +143,17 @@ def execute_tool(
             "top_findings": sorted(findings_store, key=lambda f: f.get("monthly_impact", 0), reverse=True)[:5],
         }
 
+    elif tool_name == "aws_docs_search":
+        from cloudpilot.agent.web_search import search_aws_docs
+        query = tool_input.get("query", "")
+        max_results = tool_input.get("max_results", 5)
+        return search_aws_docs(query, max_results)
+
+    elif tool_name == "aws_blog_search":
+        from cloudpilot.agent.web_search import search_aws_blog
+        query = tool_input.get("query", "")
+        max_results = tool_input.get("max_results", 5)
+        return search_aws_blog(query, max_results)
+
     else:
         return {"error": f"Unknown tool: {tool_name}"}
