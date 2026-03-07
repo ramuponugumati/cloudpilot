@@ -386,3 +386,7 @@ body {
     .cost-stats-row { grid-template-columns: repeat(2, 1fr); }
     .cost-charts-row { grid-template-columns: 1fr; }
 }
+
+/* Cost message takes full width */
+.message:has(.cost-message) { max-width: 100%; }
+.cost-message { max-width: 100%; }

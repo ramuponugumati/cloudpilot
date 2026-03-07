@@ -45,6 +45,10 @@ const Chat = {
             const data = await API.chat(message);
             this.removeTypingIndicator();
             this.addMessage('assistant', data.response);
+            // Render cost charts if chart_data is present in the response
+            if (data.chart_data && data.chart_data.type === 'cost_overview') {
+                this._addCostCharts(data.chart_data);
+            }
         } catch (err) {
             this.removeTypingIndicator();
             this.addMessage('assistant', `⚠️ Error: ${err.message}`);
@@ -112,45 +116,59 @@ const Chat = {
     },
 
     _buildCostChartHTML(data) {
-        const id = ++this.chartCounter;
-        const colors = ['#00b4ff', '#7c4dff', '#00e676', '#ff9100', '#e040fb'];
+        // Not used — charts rendered via _addCostCharts from API response
+        return '';
+    },
 
-        // Stat cards
-        let statsHtml = `<div class="cost-stats-row">`;
-        statsHtml += `<div class="cost-stat-card" style="--accent:#00b4ff">
+    _addCostCharts(data) {
+        const id = ++this.chartCounter;
+        const div = document.createElement('div');
+        div.className = 'message assistant';
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content cost-message';
+
+        let html = `<div class="cost-dashboard">`;
+        html += `<div class="cost-stats-row">`;
+        html += `<div class="cost-stat-card" style="--accent:#00b4ff">
             <div class="stat-icon">💰</div>
             <div class="stat-body"><div class="stat-value">$${data.total_sum.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
             <div class="stat-label">${data.num_months}-Month Total</div></div></div>`;
-        statsHtml += `<div class="cost-stat-card" style="--accent:#7c4dff">
+        html += `<div class="cost-stat-card" style="--accent:#7c4dff">
             <div class="stat-icon">📊</div>
             <div class="stat-body"><div class="stat-value">$${data.total_avg.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
             <div class="stat-label">Monthly Average</div></div></div>`;
-        statsHtml += `<div class="cost-stat-card" style="--accent:#00e676">
+        html += `<div class="cost-stat-card" style="--accent:#00e676">
             <div class="stat-icon">🏆</div>
             <div class="stat-body"><div class="stat-value">${data.top5[0]?.name || '-'}</div>
             <div class="stat-label">Top Service</div></div></div>`;
-        statsHtml += `<div class="cost-stat-card" style="--accent:#ff9100">
+        html += `<div class="cost-stat-card" style="--accent:#ff9100">
             <div class="stat-icon">📈</div>
             <div class="stat-body"><div class="stat-value">${data.top5.length}</div>
             <div class="stat-label">Top Services</div></div></div>`;
-        statsHtml += `</div>`;
+        html += `</div>`;
 
-        // Store data for Chart.js rendering in postRender
-        const chartDataAttr = this.escapeHtml(JSON.stringify(data));
-
-        return `<div class="cost-dashboard">
-            ${statsHtml}
-            <div class="cost-charts-row">
-                <div class="cost-chart-card dark">
-                    <div class="chart-header"><span class="chart-label">OVERVIEW</span><span class="chart-title">Monthly Spend Trend</span></div>
-                    <canvas id="cost-line-${id}" class="cost-canvas" data-chart='${chartDataAttr}' data-type="line"></canvas>
-                </div>
-                <div class="cost-chart-card light">
-                    <div class="chart-header"><span class="chart-label">BREAKDOWN</span><span class="chart-title">Top Services</span></div>
-                    <canvas id="cost-bar-${id}" class="cost-canvas" data-chart='${chartDataAttr}' data-type="bar"></canvas>
-                </div>
+        html += `<div class="cost-charts-row">
+            <div class="cost-chart-card dark">
+                <div class="chart-header"><span class="chart-label">OVERVIEW</span><span class="chart-title">Monthly Spend Trend</span></div>
+                <canvas id="cost-line-${id}" class="cost-canvas"></canvas>
             </div>
-        </div>`;
+            <div class="cost-chart-card light">
+                <div class="chart-header"><span class="chart-label">BREAKDOWN</span><span class="chart-title">Top Services</span></div>
+                <canvas id="cost-bar-${id}" class="cost-canvas"></canvas>
+            </div>
+        </div></div>`;
+
+        contentDiv.innerHTML = html;
+        div.appendChild(contentDiv);
+        this.messagesEl.appendChild(div);
+        this.scrollToBottom();
+
+        requestAnimationFrame(() => {
+            const lineCanvas = document.getElementById(`cost-line-${id}`);
+            const barCanvas = document.getElementById(`cost-bar-${id}`);
+            if (lineCanvas) this._renderLineChart(lineCanvas, data);
+            if (barCanvas) this._renderBarChart(barCanvas, data);
+        });
     },
 
     postRender(container) {
@@ -167,16 +185,6 @@ const Chat = {
         // Highlight code blocks
         container.querySelectorAll('pre code').forEach((el) => {
             if (typeof hljs !== 'undefined') hljs.highlightElement(el);
-        });
-
-        // Render Chart.js cost charts
-        container.querySelectorAll('.cost-canvas').forEach((canvas) => {
-            try {
-                const data = JSON.parse(canvas.dataset.chart);
-                const type = canvas.dataset.type;
-                if (type === 'line') this._renderLineChart(canvas, data);
-                else if (type === 'bar') this._renderBarChart(canvas, data);
-            } catch (e) { console.error('Chart render error:', e); }
         });
     },
 

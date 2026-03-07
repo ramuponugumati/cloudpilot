@@ -56,6 +56,14 @@ class DiscoverRequest(BaseModel):
     regions: Optional[List[str]] = None
 
 
+def _extract_cost_chart_data(agent) -> Optional[dict]:
+    """Extract cost chart data from the agent's findings store if cost-radar was recently run."""
+    for finding in reversed(agent.findings_store):
+        if finding.get("skill") == "cost-radar" and finding.get("metadata", {}).get("chart_data"):
+            return finding["metadata"]["chart_data"]
+    return None
+
+
 def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> FastAPI:
     app = FastAPI(title="CloudPilot Dashboard", version="0.1.0")
     job_store = JobStore()
@@ -135,7 +143,15 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
             response = await asyncio.to_thread(agent.chat, clean_message)
             logger.info(f"Chat response length: {len(response)}, first 100: {response[:100]}")
             response = sanitize_output(response)
-            return {"response": response}
+
+            # Inject cost chart data if cost-radar was just run
+            chart_data = _extract_cost_chart_data(agent)
+            if chart_data:
+                import json as _json
+                response_payload = {"response": response, "chart_data": chart_data}
+            else:
+                response_payload = {"response": response}
+            return response_payload
         except Exception as e:
             logger.error(f"Chat error: {type(e).__name__}: {e}", exc_info=True)
             raise HTTPException(status_code=500, detail="Something went wrong processing your request.")
