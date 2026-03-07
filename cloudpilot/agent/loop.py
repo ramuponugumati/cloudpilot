@@ -16,6 +16,13 @@ from cloudpilot.core import SkillRegistry
 
 logger = logging.getLogger(__name__)
 
+
+class _NoOpMemory:
+    """No-op memory stub when AgentCore memory is disabled."""
+    def store_conversation(self, *a, **kw): pass
+    def retrieve_context(self, *a, **kw): return ""
+    def retrieve_cross_session(self, *a, **kw): return ""
+
 MODEL_ID = os.environ.get("CLOUDPILOT_MODEL", "us.anthropic.claude-sonnet-4-20250514-v1:0")
 BEDROCK_REGION = os.environ.get("CLOUDPILOT_BEDROCK_REGION", "us-east-1")
 MAX_TURNS = 10  # Max tool-use turns per request
@@ -45,7 +52,11 @@ class CloudPilotAgent:
 
     def __init__(self, profile: Optional[str] = None):
         self.profile = profile
-        self.memory = AgentMemory()
+        # Memory is optional — disabled by default, enable with CLOUDPILOT_MEMORY=true
+        if os.environ.get("CLOUDPILOT_MEMORY", "").lower() == "true":
+            self.memory = AgentMemory()
+        else:
+            self.memory = _NoOpMemory()
         # Use profile-aware session so credentials are picked up correctly
         session = boto3.Session(profile_name=profile) if profile else boto3.Session()
         self.bedrock = session.client("bedrock-runtime", region_name=BEDROCK_REGION)
