@@ -228,7 +228,7 @@ class CostRadarSkill(BaseSkill):
             return None
 
     def _build_spend_overview_finding(self, summary: dict) -> Finding:
-        """Build a Finding that contains the 3-month spend overview with Mermaid bar chart."""
+        """Build a Finding with cost overview stats and embedded chart data for the dashboard."""
         months = summary["months"]
         monthly_totals = summary["monthly_totals"]
         top5 = summary["top5_services"]
@@ -237,13 +237,36 @@ class CostRadarSkill(BaseSkill):
         total_avg = summary["total_avg"]
         num_months = summary["num_months"]
 
-        # Format month labels for display (e.g., "2025-01" → "Jan 2025")
+        # Format month labels
         month_names = []
         for m in months:
             dt = datetime.strptime(m, "%Y-%m")
             month_names.append(dt.strftime("%b %Y"))
 
-        # Build description with summary heading
+        # Shorten service names for chart labels
+        short_names = [self._shorten_service_name(svc) for svc in top5]
+
+        # Build chart data JSON for the dashboard to render with Chart.js
+        import json
+        chart_data = {
+            "type": "cost_overview",
+            "months": month_names,
+            "monthly_totals": [monthly_totals[m] for m in months],
+            "total_sum": total_sum,
+            "total_avg": total_avg,
+            "num_months": num_months,
+            "top5": [
+                {
+                    "name": short_names[i],
+                    "full_name": top5[i],
+                    "total": summary["top5_totals"][top5[i]],
+                    "monthly": [top5_monthly[top5[i]].get(m, 0) for m in months],
+                }
+                for i in range(len(top5))
+            ],
+        }
+
+        # Build text description (for CLI and agent context)
         lines = [
             f"📊 {num_months}-Month Cost Overview",
             f"Total Spend: ${total_sum:,.2f} | Average/Month: ${total_avg:,.2f}",
@@ -255,49 +278,27 @@ class CostRadarSkill(BaseSkill):
 
         lines.append("")
         lines.append("Top 5 Services:")
-        for svc in top5:
+        for i, svc in enumerate(top5):
             svc_total = summary["top5_totals"][svc]
             svc_avg = svc_total / num_months if num_months else 0
-            # Shorten long service names for readability
-            short = self._shorten_service_name(svc)
-            lines.append(f"  {short}: ${svc_total:,.2f} total (${svc_avg:,.2f}/mo avg)")
+            lines.append(f"  {short_names[i]}: ${svc_total:,.2f} total (${svc_avg:,.2f}/mo avg)")
 
-        # Build Mermaid xychart bar chart
+        # Embed chart data as a hidden marker for the dashboard
         lines.append("")
-        lines.append("```mermaid")
-        lines.append("xychart-beta")
-        lines.append(f'    title "Monthly Spend — Top 5 Services ({num_months}-Month View)"')
-        x_labels = ", ".join(f'"{n}"' for n in month_names)
-        lines.append(f"    x-axis [{x_labels}]")
-        lines.append('    y-axis "Cost (USD)"')
-
-        for svc in top5:
-            short = self._shorten_service_name(svc)
-            values = [top5_monthly[svc].get(m, 0) for m in months]
-            val_str = ", ".join(f"{v:.2f}" for v in values)
-            lines.append(f'    bar [{val_str}]')
-
-        lines.append("```")
-
-        # Add legend since xychart-beta doesn't label bars by series
-        lines.append("")
-        lines.append("Bar order (left to right per month):")
-        for i, svc in enumerate(top5, 1):
-            short = self._shorten_service_name(svc)
-            lines.append(f"  {i}. {short}")
+        lines.append(f"<!-- COST_CHART:{json.dumps(chart_data)} -->")
 
         description = "\n".join(lines)
 
         return Finding(
             skill=self.name,
-            title=f"💰 {num_months}-Month Spend: ${total_sum:,.2f} total, ${total_avg:,.2f}/mo avg",
+            title=f"📡 {num_months}-Month Spend: ${total_sum:,.2f} total, ${total_avg:,.2f}/mo avg",
             severity=Severity.INFO,
             description=description,
             monthly_impact=total_avg,
             recommended_action="Review top services for optimization opportunities",
             metadata={
                 "spend_summary": summary,
-                "chart_type": "xychart-beta",
+                "chart_data": chart_data,
             },
         )
 
