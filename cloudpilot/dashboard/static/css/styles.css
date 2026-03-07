@@ -52,12 +52,21 @@ body {
 .logo { font-size: 28px; filter: drop-shadow(0 0 8px rgba(0,180,255,0.5)); }
 .header h1 {
     font-size: 22px; font-weight: 700; letter-spacing: 0.5px;
-    background: linear-gradient(135deg, var(--glow-cyan), var(--glow-blue), var(--glow-purple));
+}
+.brand-cloud {
+    background: linear-gradient(135deg, #00e5ff, #00b4ff);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
-    filter: drop-shadow(0 0 12px rgba(0,180,255,0.3));
 }
-.subtitle { color: var(--text-secondary); font-size: 13px; font-weight: 400; }
+.brand-pilot {
+    background: linear-gradient(135deg, #7c4dff, #e040fb);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.subtitle {
+    color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 400;
+    padding-left: 8px; border-left: 2px solid rgba(0,229,255,0.3);
+}
 .header-right { display: flex; align-items: center; gap: 14px; }
 .status-dot {
     width: 8px; height: 8px; border-radius: 50%;

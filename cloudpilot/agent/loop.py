@@ -82,8 +82,9 @@ class CloudPilotAgent:
 
     def __init__(self, profile: Optional[str] = None):
         self.profile = profile
-        # Memory enabled by default — disable with CLOUDPILOT_MEMORY=false
-        if os.environ.get("CLOUDPILOT_MEMORY", "true").lower() != "false":
+        # Memory disabled by default — enable with CLOUDPILOT_MEMORY=true
+        # Requires AgentCore IAM role setup
+        if os.environ.get("CLOUDPILOT_MEMORY", "").lower() == "true":
             try:
                 self.memory = AgentMemory()
             except Exception as e:
