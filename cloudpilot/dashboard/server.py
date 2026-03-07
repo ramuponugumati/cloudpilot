@@ -129,13 +129,15 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
         audit.log_chat(client_ip, len(clean_message))
         try:
             agent = _get_agent()
+            logger.info(f"Chat: profile={agent.profile}, bedrock_region={agent.bedrock.meta.region_name}")
             if req.session_id:
                 agent.session_id = req.session_id
             response = await asyncio.to_thread(agent.chat, clean_message)
+            logger.info(f"Chat response length: {len(response)}, first 100: {response[:100]}")
             response = sanitize_output(response)
             return {"response": response}
         except Exception as e:
-            logger.error(f"Chat error: {e}")
+            logger.error(f"Chat error: {type(e).__name__}: {e}", exc_info=True)
             raise HTTPException(status_code=500, detail="Something went wrong processing your request.")
 
     # --- Scan ---
