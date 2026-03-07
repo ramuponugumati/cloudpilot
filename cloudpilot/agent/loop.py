@@ -122,8 +122,8 @@ class CloudPilotAgent:
                     toolConfig={"tools": TOOL_DEFINITIONS},
                 )
             except Exception as e:
-                error_msg = f"Bedrock error: {str(e)}"
-                logger.error(error_msg)
+                error_msg = f"Something went wrong talking to the AI model. Please try again."
+                logger.error(f"Bedrock converse error: {e}")
                 return error_msg
 
             output = response.get("output", {})
