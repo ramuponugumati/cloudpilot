@@ -40,9 +40,12 @@ class AgentMemory:
         try:
             # Try to find existing memory
             memories = self.client.list_memories()
-            for m in memories.get("memories", []):
-                if m.get("name") == MEMORY_NAME:
-                    self._memory_id = m["id"]
+            # Handle both dict and list responses
+            mem_list = memories.get("memories", []) if isinstance(memories, dict) else memories if isinstance(memories, list) else []
+            for m in mem_list:
+                name = m.get("name", "") if isinstance(m, dict) else ""
+                if name == MEMORY_NAME:
+                    self._memory_id = m["id"] if isinstance(m, dict) else None
                     return self._memory_id
             # Create new memory with summary strategy
             mem = self.client.create_memory(

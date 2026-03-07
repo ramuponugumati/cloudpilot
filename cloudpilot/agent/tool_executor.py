@@ -5,6 +5,7 @@ from typing import Optional
 
 from cloudpilot.core import SkillRegistry
 from cloudpilot.aws_client import get_regions
+import cloudpilot.skills  # auto-register all skills
 
 logger = logging.getLogger(__name__)
 
