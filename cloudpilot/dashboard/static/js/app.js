@@ -15,9 +15,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             'tag-enforcer': '🏷️', 'lifecycle-tracker': '⏳', 'health-monitor': '🏥',
             'quota-guardian': '📏', 'arch-diagram': '🗺️', 'costopt-intelligence': '💡',
         };
+        const skillColors = {
+            'cost-radar': '#00b4ff', 'zombie-hunter': '#ff5252', 'security-posture': '#00e676',
+            'capacity-planner': '#7c4dff', 'event-analysis': '#ff9100', 'resiliency-gaps': '#e040fb',
+            'tag-enforcer': '#00e5ff', 'lifecycle-tracker': '#ffea00', 'health-monitor': '#ff4081',
+            'quota-guardian': '#00bcd4', 'arch-diagram': '#69f0ae', 'costopt-intelligence': '#ffd740',
+        };
         skills.forEach(s => {
             const el = document.createElement('div');
             el.className = 'skill-tag';
+            const color = skillColors[s.name] || '#00b4ff';
+            el.style.setProperty('--skill-color', color);
             el.textContent = `${icons[s.name] || '📎'} ${s.name}`;
             el.title = s.description;
             el.addEventListener('click', () => {
