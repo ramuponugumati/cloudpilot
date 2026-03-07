@@ -44,19 +44,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // New session button
-    document.getElementById('btn-new-session').addEventListener('click', () => {
-        Chat.clear();
-        Chat.addMessage('assistant', 'New session started. How can I help with your AWS infrastructure?');
-    });
-
-    // Health check
+    // Health check — show skills count in status badge
     try {
         const health = await API.health();
-        document.getElementById('status-text').textContent = `${health.skills} skills loaded`;
+        document.getElementById('status-text').textContent = `⚡ ${health.skills} skills loaded`;
     } catch (e) {
         document.getElementById('status-indicator').className = 'status-dot';
-        document.getElementById('status-indicator').style.background = '#ef4444';
+        document.getElementById('status-indicator').style.background = '#ff5252';
         document.getElementById('status-text').textContent = 'Disconnected';
+        document.getElementById('status-text').style.color = '#ff5252';
+        document.getElementById('status-text').style.borderColor = 'rgba(255,82,82,0.25)';
+        document.getElementById('status-text').style.background = 'rgba(255,82,82,0.1)';
     }
 });
