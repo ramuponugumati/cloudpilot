@@ -165,7 +165,9 @@ const Chat = {
             }
         });
         // Highlight code blocks
-        container.querySelectorAll('pre code').forEach((el) => hljs.highlightElement(el));
+        container.querySelectorAll('pre code').forEach((el) => {
+            if (typeof hljs !== 'undefined') hljs.highlightElement(el);
+        });
 
         // Render Chart.js cost charts
         container.querySelectorAll('.cost-canvas').forEach((canvas) => {
