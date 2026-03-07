@@ -53,6 +53,7 @@ class SkillResult:
     accounts_scanned: int = 0
     regions_scanned: int = 0
     errors: list[str] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)  # Extra skill-specific data (e.g., spend summary)
 
     @property
     def total_impact(self):

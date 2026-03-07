@@ -269,7 +269,7 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
         if job.results:
             return [{"skill_name": r.skill_name, "findings": [f.to_dict() for f in r.findings],
                       "duration_seconds": r.duration_seconds, "total_impact": r.total_impact,
-                      "critical_count": r.critical_count} for r in job.results]
+                      "critical_count": r.critical_count, "metadata": r.metadata} for r in job.results]
         return []
 
     return app

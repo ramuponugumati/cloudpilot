@@ -43,7 +43,7 @@ def execute_tool(
             findings_store.extend(findings)
         if skills_run is not None and skill_name not in skills_run:
             skills_run.append(skill_name)
-        return {
+        response = {
             "skill": skill_name,
             "findings_count": len(findings),
             "findings": findings[:20],  # Cap at 20 for context window
@@ -51,6 +51,10 @@ def execute_tool(
             "total_impact": round(result.total_impact, 2),
             "critical_count": result.critical_count,
         }
+        # Include skill metadata (e.g., spend summary from cost-anomaly)
+        if result.metadata:
+            response["metadata"] = result.metadata
+        return response
 
     elif tool_name == "run_all_skills":
         regions = tool_input.get("regions") or get_regions(profile=profile)
