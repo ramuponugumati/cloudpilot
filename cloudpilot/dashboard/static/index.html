@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudPilot — AWS Infrastructure Intelligence</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- Mermaid.js for architecture diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <span class="logo">☁️✈️</span>
+                <h1>CloudPilot</h1>
+                <span class="subtitle">AWS Infrastructure Intelligence</span>
+            </div>
+            <div class="header-right">
+                <span id="status-indicator" class="status-dot green"></span>
+                <span id="status-text">Connected</span>
+                <button id="btn-new-session" class="btn-secondary" title="New Session">🔄 New Session</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Quick Actions</h3>
+                    <button class="action-btn" data-action="Show me my architecture">🏗️ Architecture Map</button>
+                    <button class="action-btn" data-action="Scan all skills">🔍 Full Scan</button>
+                    <button class="action-btn" data-action="Find security issues">🛡️ Security Check</button>
+                    <button class="action-btn" data-action="Find zombie resources wasting money">🧟 Zombie Hunt</button>
+                    <button class="action-btn" data-action="Show cost optimization opportunities">💰 Cost Optimize</button>
+                    <button class="action-btn" data-action="Generate Terraform for my infrastructure">🏗️ Generate IaC</button>
+                </div>
+                <div class="sidebar-section">
+                    <h3>Skills</h3>
+                    <div id="skills-list" class="skills-list"></div>
+                </div>
+            </aside>
+
+            <!-- Chat Area -->
+            <main class="chat-area">
+                <div id="chat-messages" class="chat-messages">
+                    <div class="message assistant">
+                        <div class="message-content">
+                            <p>Hey! I'm <strong>CloudPilot</strong> — your AWS infrastructure intelligence assistant.</p>
+                            <p>I can help you:</p>
+                            <ul>
+                                <li>🔍 <strong>Discover</strong> all resources in your AWS account</li>
+                                <li>📊 <strong>Visualize</strong> your architecture as interactive diagrams</li>
+                                <li>🛡️ <strong>Scan</strong> for security risks, cost waste, and resiliency gaps</li>
+                                <li>🏗️ <strong>Generate IaC</strong> (CDK, CloudFormation, Terraform) from live infra</li>
+                                <li>🔧 <strong>Fix</strong> issues with one-click remediation</li>
+                            </ul>
+                            <p>Try asking: <em>"Show me my production architecture"</em> or <em>"What's wasting money?"</em></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="chat-input-area">
+                    <div class="input-wrapper">
+                        <textarea id="chat-input" placeholder="Ask CloudPilot anything about your AWS infrastructure..." rows="1"></textarea>
+                        <button id="btn-send" class="btn-send" title="Send">
+                            <span id="send-icon">➤</span>
+                            <span id="send-spinner" class="spinner hidden"></span>
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/chat.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

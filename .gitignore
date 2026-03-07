@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+.pytest_cache/
+.DS_Store
+ops_agent_audit.log
+cloudpilot_audit.log
+*.docx
+*.pptx
