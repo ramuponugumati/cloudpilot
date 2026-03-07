@@ -46,7 +46,9 @@ class CloudPilotAgent:
     def __init__(self, profile: Optional[str] = None):
         self.profile = profile
         self.memory = AgentMemory()
-        self.bedrock = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
+        # Use profile-aware session so credentials are picked up correctly
+        session = boto3.Session(profile_name=profile) if profile else boto3.Session()
+        self.bedrock = session.client("bedrock-runtime", region_name=BEDROCK_REGION)
         self.conversation_history: list[dict] = []
         self.session_id = str(uuid.uuid4())[:8]
         self.actor_id = "default-user"

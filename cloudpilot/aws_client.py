@@ -20,7 +20,7 @@ def get_session(profile=None, region=None):
     return boto3.Session(**kwargs)
 
 
-def get_client(service, profile=None, region=None):
+def get_client(service, region=None, profile=None):
     return get_session(profile, region).client(service)
 
 
