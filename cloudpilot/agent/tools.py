@@ -5,7 +5,7 @@ TOOL_DEFINITIONS = [
     {
         "toolSpec": {
             "name": "run_skill",
-            "description": "Run a CloudPilot scanning skill against the AWS account. Available skills: cost-anomaly, zombie-hunter, security-posture, capacity-planner, event-analysis, resiliency-gaps, tag-enforcer, lifecycle-tracker, health-monitor, quota-guardian, costopt-intelligence, arch-diagram.",
+            "description": "Run a CloudPilot scanning skill against the AWS account. Available skills: cost-radar, zombie-hunter, security-posture, capacity-planner, event-analysis, resiliency-gaps, tag-enforcer, lifecycle-tracker, health-monitor, quota-guardian, costopt-intelligence, arch-diagram.",
             "inputSchema": {
                 "json": {
                     "type": "object",

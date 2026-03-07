@@ -1,5 +1,5 @@
-"""Cost Anomaly Detection — spending spikes, week-over-week changes, new services,
-and 3-month spend summary with top-5 service bar chart."""
+"""Cost Radar — 3-month spend overview with top-5 service bar chart,
+anomaly detection, week-over-week spike alerts, and new service detection."""
 import logging
 from datetime import datetime, timedelta
 from cloudpilot.core import BaseSkill, SkillRegistry, SkillResult, Finding, Severity
@@ -8,10 +8,10 @@ from cloudpilot.aws_client import get_client
 logger = logging.getLogger(__name__)
 
 
-class CostAnomalySkill(BaseSkill):
-    name = "cost-anomaly"
-    description = "Detect cost spikes, week-over-week changes, new services, and 3-month spend overview"
-    version = "0.3.0"
+class CostRadarSkill(BaseSkill):
+    name = "cost-radar"
+    description = "3-month spend overview, anomaly detection, week-over-week spikes, new service alerts, top-5 service bar chart"
+    version = "0.4.0"
 
     def scan(self, regions, profile=None, **kwargs) -> SkillResult:
         findings = []
@@ -25,7 +25,7 @@ class CostAnomalySkill(BaseSkill):
                 metadata["spend_summary"] = spend_summary
                 findings.insert(0, self._build_spend_overview_finding(spend_summary))
         except Exception as e:
-            logger.warning(f"Cost anomaly scan error: {e}")
+            logger.warning(f"Cost radar scan error: {e}")
             return SkillResult(skill_name=self.name, errors=[str(e)])
         return SkillResult(skill_name=self.name, findings=findings, regions_scanned=1, metadata=metadata)
 
@@ -45,7 +45,7 @@ class CostAnomalySkill(BaseSkill):
                     continue
                 sev = Severity.CRITICAL if amount > 500 else Severity.HIGH if amount > 100 else Severity.MEDIUM
                 findings.append(Finding(
-                    skill=self.name, title=f"Cost anomaly: ${amount:.0f} impact",
+                    skill=self.name, title=f"Cost spike detected: ${amount:.0f} impact",
                     severity=sev, description=f"Service: {a.get('DimensionValue', 'Unknown')}",
                     monthly_impact=amount, recommended_action="Investigate unexpected spend",
                 ))
@@ -356,4 +356,4 @@ class CostAnomalySkill(BaseSkill):
         return short
 
 
-SkillRegistry.register(CostAnomalySkill())
+SkillRegistry.register(CostRadarSkill())

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const skills = await API.listSkills();
         const skillsList = document.getElementById('skills-list');
         const icons = {
-            'cost-anomaly': '💰', 'zombie-hunter': '🧟', 'security-posture': '🛡️',
+            'cost-radar': '📡', 'zombie-hunter': '🧟', 'security-posture': '🛡️',
             'capacity-planner': '📊', 'event-analysis': '🔍', 'resiliency-gaps': '🏗️',
             'tag-enforcer': '🏷️', 'lifecycle-tracker': '⏳', 'health-monitor': '🏥',
             'quota-guardian': '📏', 'arch-diagram': '🗺️', 'costopt-intelligence': '💡',

@@ -29,7 +29,7 @@ REGIONS = ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
 
 # Skill names from the 12 ported skills
 SKILL_NAMES = [
-    "cost-anomaly", "zombie-hunter", "security-posture",
+    "cost-radar", "zombie-hunter", "security-posture",
     "capacity-planner", "event-analysis", "resiliency-gaps",
     "tag-enforcer", "lifecycle-tracker", "health-monitor",
     "quota-guardian", "costopt-intelligence", "arch-diagram",

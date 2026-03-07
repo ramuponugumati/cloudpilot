@@ -51,7 +51,7 @@ def execute_tool(
             "total_impact": round(result.total_impact, 2),
             "critical_count": result.critical_count,
         }
-        # Include skill metadata (e.g., spend summary from cost-anomaly)
+        # Include skill metadata (e.g., spend summary from cost-radar)
         if result.metadata:
             response["metadata"] = result.metadata
         return response

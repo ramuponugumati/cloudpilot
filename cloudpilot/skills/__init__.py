@@ -3,7 +3,7 @@ Skills carried forward from aws-ops-agent + new CloudPilot capabilities."""
 
 # Import all skill modules to trigger registration
 from cloudpilot.skills import (
-    cost_anomaly,
+    cost_radar,
     zombie_hunter,
     security_posture,
     capacity_planner,

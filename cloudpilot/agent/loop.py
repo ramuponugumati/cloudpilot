@@ -59,7 +59,7 @@ When users want to inspect their LIVE AWS environment, you have tools to:
 6. **AWS Docs Search** — Search official AWS documentation for authoritative technical details
 7. **AWS Blog Search** — Search AWS blog posts for latest launches, features, and best practices
 
-Available scanning skills: cost-anomaly, zombie-hunter, security-posture, capacity-planner, event-analysis, resiliency-gaps, tag-enforcer, lifecycle-tracker, health-monitor, quota-guardian, costopt-intelligence, arch-diagram.
+Available scanning skills: cost-radar, zombie-hunter, security-posture, capacity-planner, event-analysis, resiliency-gaps, tag-enforcer, lifecycle-tracker, health-monitor, quota-guardian, costopt-intelligence, arch-diagram.
 
 **Planned (Phase 2):** Drift detection and network troubleshooting.
 
