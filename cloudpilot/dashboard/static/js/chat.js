@@ -47,6 +47,8 @@ const Chat = {
             this.addMessage('assistant', data.response);
             // Render cost charts if chart_data is present in the response
             if (data.chart_data && data.chart_data.type === 'cost_overview') {
+                console.log('Rendering cost charts:', data.chart_data);
+                console.log('Chart.js available:', typeof Chart !== 'undefined');
                 this._addCostCharts(data.chart_data);
             }
         } catch (err) {
@@ -166,8 +168,12 @@ const Chat = {
         requestAnimationFrame(() => {
             const lineCanvas = document.getElementById(`cost-line-${id}`);
             const barCanvas = document.getElementById(`cost-bar-${id}`);
-            if (lineCanvas) this._renderLineChart(lineCanvas, data);
-            if (barCanvas) this._renderBarChart(barCanvas, data);
+            try {
+                if (lineCanvas && typeof Chart !== 'undefined') this._renderLineChart(lineCanvas, data);
+                if (barCanvas && typeof Chart !== 'undefined') this._renderBarChart(barCanvas, data);
+            } catch (e) {
+                console.error('Chart render error:', e);
+            }
         });
     },
 
