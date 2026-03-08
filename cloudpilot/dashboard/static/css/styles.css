@@ -420,3 +420,5 @@ body {
 /* Cost message takes full width */
 .message:has(.cost-message) { max-width: 100%; }
 .cost-message { max-width: 100%; }
+
+.mermaid-src { display: none !important; }

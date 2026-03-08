@@ -88,31 +88,40 @@ const Chat = {
             } catch (e) { return ''; }
         });
 
-        // Mermaid blocks — use <pre> to preserve newlines for mermaid parser
+        // Extract mermaid and code blocks FIRST, replace with placeholders
+        const blocks = [];
         html = html.replace(/```mermaid\n([\s\S]*?)```/g, (_, code) => {
             const id = `mermaid-${++this.mermaidCounter}`;
-            return `<div class="mermaid-container" id="${id}"><pre style="display:none">${this.escapeHtml(code.trim())}</pre></div>`;
+            const idx = blocks.length;
+            blocks.push(`<div class="mermaid-container" id="${id}"><pre class="mermaid-src">${this.escapeHtml(code.trim())}</pre></div>`);
+            return `%%BLOCK_${idx}%%`;
         });
 
-        // Code blocks with language
         html = html.replace(/```(\w+)\n([\s\S]*?)```/g, (_, lang, code) => {
-            return `<div class="code-block-wrapper">` +
-                `<button class="copy-btn" onclick="Chat.copyCode(this)">Copy</button>` +
-                `<pre><code class="language-${lang}">${this.escapeHtml(code.trim())}</code></pre></div>`;
+            const idx = blocks.length;
+            blocks.push(`<div class="code-block-wrapper"><button class="copy-btn" onclick="Chat.copyCode(this)">Copy</button><pre><code class="language-${lang}">${this.escapeHtml(code.trim())}</code></pre></div>`);
+            return `%%BLOCK_${idx}%%`;
         });
 
-        // Generic code blocks
         html = html.replace(/```\n?([\s\S]*?)```/g, (_, code) => {
-            return `<div class="code-block-wrapper">` +
-                `<button class="copy-btn" onclick="Chat.copyCode(this)">Copy</button>` +
-                `<pre><code>${this.escapeHtml(code.trim())}</code></pre></div>`;
+            const idx = blocks.length;
+            blocks.push(`<div class="code-block-wrapper"><button class="copy-btn" onclick="Chat.copyCode(this)">Copy</button><pre><code>${this.escapeHtml(code.trim())}</code></pre></div>`);
+            return `%%BLOCK_${idx}%%`;
         });
 
+        // Now process text formatting (won't touch block placeholders)
         html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
         html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
         html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
         html = html.split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
         html = html.replace(/<p>[-•]\s/g, '<li>').replace(/<\/p>(\s*<li>)/g, '</li>$1');
+
+        // Restore blocks
+        for (let i = 0; i < blocks.length; i++) {
+            html = html.replace(`%%BLOCK_${i}%%`, blocks[i]);
+            // Also handle if wrapped in <p> tags
+            html = html.replace(`<p>%%BLOCK_${i}%%</p>`, blocks[i]);
+        }
 
         return html;
     },
@@ -181,8 +190,9 @@ const Chat = {
         // Render mermaid diagrams
         container.querySelectorAll('.mermaid-container').forEach(async (el) => {
             try {
-                const pre = el.querySelector('pre');
+                const pre = el.querySelector('.mermaid-src');
                 const code = pre ? pre.textContent : el.textContent;
+                if (pre) pre.remove();
                 const { svg } = await mermaid.render(el.id + '-svg', code);
                 el.innerHTML = svg;
             } catch (e) {
