@@ -143,6 +143,43 @@ def execute_tool(
             "top_findings": sorted(findings_store, key=lambda f: f.get("monthly_impact", 0), reverse=True)[:5],
         }
 
+    elif tool_name == "generate_diagram":
+        view_type = tool_input.get("view_type", "default")
+        resources = tool_input.get("resources") or resources_store or []
+        if not resources:
+            from cloudpilot.skills.arch_mapper import ArchMapper
+            mapper = ArchMapper()
+            regions = get_regions(profile=profile)
+            disc = mapper.discover(regions, profile)
+            resources = disc.get("resources", [])
+            connections = disc.get("connections", [])
+            if resources_store is not None:
+                resources_store.clear()
+                resources_store.extend(resources)
+        else:
+            connections = []
+        from cloudpilot.skills.arch_mapper import generate_diagram
+        mermaid = generate_diagram(resources, connections, view_type)
+        return {"diagram": mermaid, "view_type": view_type, "resource_count": len(resources)}
+
+    elif tool_name == "detect_drift":
+        from cloudpilot.core import StubToolResponse
+        stub = StubToolResponse(
+            tool_name="detect_drift",
+            description="Infrastructure drift detection comparing live AWS resources against IaC definitions. Supports IaC drift, configuration drift, and baseline drift.",
+            planned_capabilities=["IaC drift (CDK/CFN/Terraform vs live)", "Configuration drift (baseline vs current)", "Compliance drift (policy violations)"],
+        )
+        return stub.to_dict()
+
+    elif tool_name == "trace_network_path":
+        from cloudpilot.core import StubToolResponse
+        stub = StubToolResponse(
+            tool_name="trace_network_path",
+            description="Network path tracing between AWS resources. Analyzes security groups, NACLs, route tables, and VPC peering to diagnose connectivity.",
+            planned_capabilities=["End-to-end path tracing", "Security group chain analysis", "NACL rule evaluation", "Cross-VPC connectivity diagnosis"],
+        )
+        return stub.to_dict()
+
     elif tool_name == "aws_docs_search":
         from cloudpilot.agent.web_search import search_aws_docs
         query = tool_input.get("query", "")

@@ -103,7 +103,7 @@ class ArchMapper(BaseSkill):
         anti_patterns = self.detect_anti_patterns(resources)
         service_recommendations = self.detect_service_recommendations(resources)
         connections = self.map_connections(resources)
-        diagram = self._generate_mermaid(resources)
+        diagram = self._generate_mermaid(resources, connections)
 
         # Build summary
         by_service: dict[str, int] = {}
@@ -670,41 +670,325 @@ class ArchMapper(BaseSkill):
 
         return connections
 
-    def _generate_mermaid(self, resources) -> str:
+    def _generate_mermaid(self, resources, connections=None, view_type="default") -> str:
         """Generate a Mermaid architecture diagram from discovered resources."""
-        lines = ["graph TB"]
-        by_service = {}
-        for r in resources:
-            svc = r["service"]
-            by_service.setdefault(svc, []).append(r)
+        return generate_diagram(resources, connections or [], view_type)
 
-        icons = {
-            "ec2": "🖥️", "rds": "🗄️", "lambda": "⚡", "s3": "📦",
-            "ecs": "🐳", "vpc": "🌐", "dynamodb": "📊", "sqs": "📬",
-            "sns": "📢", "apigateway": "🚪", "cloudfront": "🌍", "elb": "⚖️",
-        }
 
-        for svc, items in by_service.items():
-            icon = icons.get(svc, "📎")
-            lines.append(f'    subgraph {svc.upper()}["{icon} {svc.upper()}"]')
-            for item in items[:10]:
-                safe_id = item["id"].replace("-", "_").replace(".", "_")[:30]
-                label = item.get("name") or item["id"]
-                lines.append(f'        {safe_id}["{label}"]')
-            lines.append("    end")
+# --- Standalone diagram generation with 5 view types ---
 
-        # Add relationships
-        for r in resources:
-            if r["service"] == "ec2" and r.get("vpc_id"):
-                vpc_id = r["vpc_id"].replace("-", "_")
-                ec2_id = r["id"].replace("-", "_")[:30]
-                lines.append(f"    {vpc_id} --> {ec2_id}")
-            if r["service"] == "rds" and r.get("vpc_id"):
-                vpc_id = r["vpc_id"].replace("-", "_")
-                rds_id = r["id"].replace("-", "_")[:30]
-                lines.append(f"    {vpc_id} --> {rds_id}")
+ICONS = {
+    "ec2": "🖥️", "rds": "🗄️", "lambda": "⚡", "s3": "📦",
+    "ecs": "🐳", "vpc": "🌐", "dynamodb": "📊", "sqs": "📬",
+    "sns": "📢", "apigateway": "🚪", "cloudfront": "🌍", "elb": "⚖️",
+    "subnet": "🔲", "nat_gateway": "🔀", "igw": "🚪",
+}
 
-        return "\n".join(lines)
+LAYER_ORDER = ["Edge", "Load_Balancing", "Compute", "Data", "Storage", "Networking", "Security", "Messaging"]
+
+
+def _safe_id(resource_id: str) -> str:
+    """Make a resource ID safe for Mermaid node names."""
+    return resource_id.replace("-", "_").replace(".", "_").replace("/", "_").replace(":", "_")[:30]
+
+
+def _node(r: dict) -> tuple[str, str]:
+    """Return (safe_id, label) for a resource."""
+    sid = _safe_id(r.get("id", "unknown"))
+    icon = ICONS.get(r.get("service", ""), "📎")
+    name = r.get("name") or r.get("id", "")
+    return sid, f"{icon} {name}"
+
+
+def _collapse_if_needed(items: list[dict], threshold: int = 50) -> tuple[list[dict], list[dict]]:
+    """If more than threshold items of same type, collapse into summary nodes."""
+    if len(items) <= threshold:
+        return items, []
+    # Keep items that have connections, collapse the rest
+    connected = [r for r in items if r.get("vpc_id") or r.get("security_groups")]
+    rest = [r for r in items if r not in connected]
+    if len(connected) > threshold:
+        connected = connected[:threshold]
+    return connected, rest
+
+
+def generate_diagram(resources: list[dict], connections: list[dict] = None,
+                     view_type: str = "default") -> str:
+    """Generate Mermaid diagram from resource inventory with multiple view types.
+
+    Args:
+        resources: Resource inventory from ArchMapper.discover()
+        connections: Resource connections (optional, used for default/traffic-flow)
+        view_type: One of: default, security, cost, multi-region, traffic-flow
+
+    Returns:
+        Mermaid diagram string
+    """
+    if not resources:
+        return "graph TB\n    empty[No resources discovered]"
+
+    views = {
+        "default": _view_default,
+        "security": _view_security,
+        "cost": _view_cost,
+        "multi-region": _view_multi_region,
+        "traffic-flow": _view_traffic_flow,
+    }
+    fn = views.get(view_type, _view_default)
+    return fn(resources, connections or [])
+
+
+def _view_default(resources: list[dict], connections: list[dict]) -> str:
+    """Full architecture grouped by layer with connections."""
+    lines = ["graph TB"]
+
+    # Group by layer
+    by_layer: dict[str, list[dict]] = {}
+    for r in resources:
+        layer = r.get("layer", "Other")
+        by_layer.setdefault(layer, []).append(r)
+
+    # Render layers in order
+    for layer in LAYER_ORDER:
+        items = by_layer.get(layer, [])
+        if not items:
+            continue
+        shown, collapsed = _collapse_if_needed(items)
+        lines.append(f'    subgraph {layer}["{layer.replace("_", " ")}"]')
+        for r in shown:
+            sid, label = _node(r)
+            lines.append(f'        {sid}["{label}"]')
+        if collapsed:
+            by_svc: dict[str, int] = {}
+            for r in collapsed:
+                svc = r.get("service", "other")
+                by_svc[svc] = by_svc.get(svc, 0) + 1
+            for svc, count in by_svc.items():
+                icon = ICONS.get(svc, "📎")
+                lines.append(f'        {_safe_id(svc)}_summary["{icon} {count} {svc} resources"]')
+        lines.append("    end")
+
+    # Render "Other" layer if any
+    other = by_layer.get("Other", []) + by_layer.get("", [])
+    if other:
+        lines.append('    subgraph Other["Other"]')
+        for r in other[:20]:
+            sid, label = _node(r)
+            lines.append(f'        {sid}["{label}"]')
+        lines.append("    end")
+
+    # Draw connections
+    for conn in connections:
+        src = _safe_id(conn.get("source_id", ""))
+        tgt = _safe_id(conn.get("target_id", ""))
+        ctype = conn.get("connection_type", "")
+        if src and tgt and src != tgt:
+            if ctype == "elb_target":
+                lines.append(f"    {src} -->|traffic| {tgt}")
+            elif ctype == "security_group_ref":
+                lines.append(f"    {src} -.->|sg| {tgt}")
+            else:
+                lines.append(f"    {src} --> {tgt}")
+
+    return "\n".join(lines)
+
+
+def _view_security(resources: list[dict], connections: list[dict]) -> str:
+    """Security view: SGs, NACLs, IAM boundaries with allow/deny."""
+    lines = ["graph LR"]
+
+    # Collect security-relevant resources
+    sgs = [r for r in resources if r.get("type") == "security_group" or r.get("service") == "vpc" and "sg-" in r.get("id", "")]
+    compute = [r for r in resources if r.get("layer") in ("Compute", "Data", "Load_Balancing")]
+    vpcs = [r for r in resources if r.get("service") == "vpc" and r.get("type") == "vpc"]
+
+    # VPC boundaries
+    for vpc in vpcs:
+        vid = _safe_id(vpc["id"])
+        vname = vpc.get("name") or vpc["id"]
+        lines.append(f'    subgraph {vid}["🌐 {vname}"]')
+
+        # Resources in this VPC
+        vpc_resources = [r for r in compute if r.get("vpc_id") == vpc["id"]]
+        for r in vpc_resources[:20]:
+            sid, label = _node(r)
+            lines.append(f'        {sid}["{label}"]')
+
+        lines.append("    end")
+
+    # Internet boundary
+    lines.append('    Internet(("🌍 Internet"))')
+
+    # SG connections from connection data
+    for conn in connections:
+        if conn.get("connection_type") == "security_group_ref":
+            src = _safe_id(conn["source_id"])
+            tgt = _safe_id(conn["target_id"])
+            lines.append(f"    {src} -.->|allow| {tgt}")
+
+    # Public-facing resources connect to Internet
+    for r in resources:
+        if r.get("scheme") == "internet-facing" or r.get("service") == "cloudfront":
+            sid = _safe_id(r["id"])
+            lines.append(f"    Internet -->|HTTPS| {sid}")
+        if r.get("service") == "apigateway":
+            sid = _safe_id(r["id"])
+            lines.append(f"    Internet -->|API| {sid}")
+
+    # Open security group warnings
+    for r in resources:
+        sgs_list = r.get("security_groups", [])
+        if isinstance(sgs_list, list) and sgs_list:
+            sid = _safe_id(r["id"])
+            for sg in sgs_list[:3]:
+                sg_id = _safe_id(sg)
+                lines.append(f"    {sg_id}[/🛡️ {sg}/] -.-> {sid}")
+
+    return "\n".join(lines)
+
+
+def _view_cost(resources: list[dict], connections: list[dict]) -> str:
+    """Cost view: resources annotated with estimated monthly cost, top contributors highlighted."""
+    lines = ["graph TB"]
+
+    # Rough cost estimates by service/type
+    cost_map = {
+        "ec2": 50, "rds": 100, "elb": 25, "ecs": 40, "lambda": 5,
+        "s3": 3, "dynamodb": 10, "cloudfront": 15, "sqs": 2, "sns": 1,
+        "vpc": 0, "apigateway": 8,
+    }
+
+    # Calculate costs and sort
+    costed = []
+    for r in resources:
+        svc = r.get("service", "")
+        est = cost_map.get(svc, 5)
+        # Adjust by instance type if available
+        itype = r.get("instance_type", r.get("instance_class", ""))
+        if "xlarge" in itype:
+            est *= 3
+        elif "large" in itype:
+            est *= 2
+        costed.append((r, est))
+
+    costed.sort(key=lambda x: x[1], reverse=True)
+    total = sum(c for _, c in costed)
+
+    lines.append(f'    total["💰 Total Est: ~${total:,.0f}/mo"]')
+    lines.append(f'    style total fill:#ff9100,color:#fff,stroke:#ff6d00')
+
+    # Group by layer, annotate with cost
+    by_layer: dict[str, list[tuple]] = {}
+    for r, cost in costed:
+        layer = r.get("layer", "Other")
+        by_layer.setdefault(layer, []).append((r, cost))
+
+    for layer in LAYER_ORDER:
+        items = by_layer.get(layer, [])
+        if not items:
+            continue
+        layer_cost = sum(c for _, c in items)
+        lines.append(f'    subgraph {layer}["${layer_cost:,.0f}/mo — {layer.replace("_", " ")}"]')
+        for r, cost in items[:15]:
+            sid, label = _node(r)
+            cost_label = f"${cost}/mo"
+            lines.append(f'        {sid}["{label}<br/>{cost_label}"]')
+        lines.append("    end")
+        lines.append(f"    total --> {layer}")
+
+    return "\n".join(lines)
+
+
+def _view_multi_region(resources: list[dict], connections: list[dict]) -> str:
+    """Multi-region view: resources grouped by region subgraphs."""
+    lines = ["graph TB"]
+
+    by_region: dict[str, list[dict]] = {}
+    for r in resources:
+        region = r.get("region", "unknown")
+        by_region.setdefault(region, []).append(r)
+
+    # Sort regions: global first, then alphabetical
+    sorted_regions = sorted(by_region.keys(), key=lambda x: ("0" if x == "global" else "1") + x)
+
+    for region in sorted_regions:
+        items = by_region[region]
+        safe_region = region.replace("-", "_")
+        lines.append(f'    subgraph {safe_region}["🌎 {region} ({len(items)} resources)"]')
+
+        # Sub-group by service within region
+        by_svc: dict[str, list[dict]] = {}
+        for r in items:
+            by_svc.setdefault(r.get("service", ""), []).append(r)
+
+        for svc, svc_items in by_svc.items():
+            if len(svc_items) > 10:
+                icon = ICONS.get(svc, "📎")
+                lines.append(f'        {safe_region}_{svc}["{icon} {len(svc_items)} {svc}"]')
+            else:
+                for r in svc_items:
+                    sid, label = _node(r)
+                    lines.append(f'        {sid}["{label}"]')
+
+        lines.append("    end")
+
+    # Cross-region connections
+    for conn in connections:
+        src_r = next((r for r in resources if r.get("id") == conn.get("source_id")), None)
+        tgt_r = next((r for r in resources if r.get("id") == conn.get("target_id")), None)
+        if src_r and tgt_r and src_r.get("region") != tgt_r.get("region"):
+            src = _safe_id(conn["source_id"])
+            tgt = _safe_id(conn["target_id"])
+            lines.append(f"    {src} -.->|cross-region| {tgt}")
+
+    return "\n".join(lines)
+
+
+def _view_traffic_flow(resources: list[dict], connections: list[dict]) -> str:
+    """Traffic flow view: edge → load balancing → compute → data request path."""
+    lines = ["graph LR"]
+
+    # Collect resources by layer for the flow
+    edge = [r for r in resources if r.get("layer") == "Edge"]
+    lbs = [r for r in resources if r.get("layer") == "Load_Balancing"]
+    compute = [r for r in resources if r.get("layer") == "Compute"]
+    data = [r for r in resources if r.get("layer") == "Data"]
+    storage = [r for r in resources if r.get("layer") == "Storage"]
+    messaging = [r for r in resources if r.get("layer") == "Messaging"]
+
+    lines.append('    User(("👤 User"))')
+
+    def _add_layer(name, items, max_show=8):
+        if not items:
+            return
+        lines.append(f'    subgraph {name}["{name.replace("_", " ")}"]')
+        for r in items[:max_show]:
+            sid, label = _node(r)
+            lines.append(f'        {sid}["{label}"]')
+        if len(items) > max_show:
+            lines.append(f'        {name}_more["... +{len(items) - max_show} more"]')
+        lines.append("    end")
+
+    _add_layer("Edge", edge)
+    _add_layer("Load_Balancing", lbs)
+    _add_layer("Compute", compute)
+    _add_layer("Data", data)
+    _add_layer("Storage", storage)
+    _add_layer("Messaging", messaging)
+
+    # Flow arrows between layers
+    flow = [("User", "Edge"), ("Edge", "Load_Balancing"), ("Load_Balancing", "Compute"),
+            ("Compute", "Data"), ("Compute", "Storage"), ("Compute", "Messaging")]
+    for src, tgt in flow:
+        src_items = {"User": [], "Edge": edge, "Load_Balancing": lbs, "Compute": compute,
+                     "Data": data, "Storage": storage, "Messaging": messaging}
+        if src == "User" and (edge or lbs or compute):
+            target = "Edge" if edge else "Load_Balancing" if lbs else "Compute"
+            lines.append(f"    User -->|request| {target}")
+        elif src_items.get(src) and src_items.get(tgt):
+            lines.append(f"    {src} -->|flow| {tgt}")
+
+    return "\n".join(lines)
 
 
 SkillRegistry.register(ArchMapper())

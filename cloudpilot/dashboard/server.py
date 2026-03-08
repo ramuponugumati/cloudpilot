@@ -231,9 +231,9 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
             resources = disc.get("resources", [])
             agent.resources_store.clear()
             agent.resources_store.extend(resources)
-        from cloudpilot.skills.arch_mapper import ArchMapper
+        from cloudpilot.skills.arch_mapper import ArchMapper, generate_diagram
         mapper = ArchMapper()
-        mermaid = mapper._generate_mermaid(resources)
+        mermaid = generate_diagram(resources, [], req.view_type)
         return {"diagram": mermaid, "view_type": req.view_type, "resource_count": len(resources)}
 
     # --- IaC ---

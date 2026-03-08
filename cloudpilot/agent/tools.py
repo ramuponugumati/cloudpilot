@@ -163,4 +163,57 @@ TOOL_DEFINITIONS = [
             },
         }
     },
+    {
+        "toolSpec": {
+            "name": "generate_diagram",
+            "description": "Generate a Mermaid architecture diagram from discovered resources. Supports 5 view types: default (full architecture by layer), security (SGs, NACLs, IAM boundaries), cost (resources annotated with estimated monthly cost), multi-region (grouped by region), traffic-flow (edge→compute→data request path).",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "view_type": {
+                            "type": "string",
+                            "enum": ["default", "security", "cost", "multi-region", "traffic-flow"],
+                            "description": "Diagram view type",
+                            "default": "default",
+                        },
+                        "resources": {
+                            "type": "array",
+                            "items": {"type": "object"},
+                            "description": "Resource inventory. If omitted, uses previously discovered resources.",
+                        },
+                    },
+                }
+            },
+        }
+    },
+    {
+        "toolSpec": {
+            "name": "detect_drift",
+            "description": "Detect infrastructure drift between live AWS resources and IaC definitions. COMING SOON in Phase 2 — will support IaC drift, configuration drift, and baseline drift detection.",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "scope": {"type": "string", "description": "Scope of drift detection"},
+                    },
+                }
+            },
+        }
+    },
+    {
+        "toolSpec": {
+            "name": "trace_network_path",
+            "description": "Trace network connectivity path between two AWS resources. COMING SOON in Phase 2 — will support path tracing, security group chain analysis, and connectivity diagnosis.",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "source": {"type": "string", "description": "Source resource ID"},
+                        "destination": {"type": "string", "description": "Destination resource ID"},
+                    },
+                }
+            },
+        }
+    },
 ]
