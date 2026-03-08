@@ -103,7 +103,9 @@ class ArchMapper(BaseSkill):
         anti_patterns = self.detect_anti_patterns(resources)
         service_recommendations = self.detect_service_recommendations(resources)
         connections = self.map_connections(resources)
-        diagram = self._generate_mermaid(resources, connections)
+        # Serialize connections for diagram and return
+        conn_dicts = [c.to_dict() if hasattr(c, "to_dict") else c for c in connections]
+        diagram = self._generate_mermaid(resources, conn_dicts)
 
         # Build summary
         by_service: dict[str, int] = {}
@@ -712,13 +714,13 @@ def _collapse_if_needed(items: list[dict], threshold: int = 50) -> tuple[list[di
     return connected, rest
 
 
-def generate_diagram(resources: list[dict], connections: list[dict] = None,
+def generate_diagram(resources: list[dict], connections: list = None,
                      view_type: str = "default") -> str:
     """Generate Mermaid diagram from resource inventory with multiple view types.
 
     Args:
         resources: Resource inventory from ArchMapper.discover()
-        connections: Resource connections (optional, used for default/traffic-flow)
+        connections: Resource connections (dicts or ResourceConnection objects)
         view_type: One of: default, security, cost, multi-region, traffic-flow
 
     Returns:
@@ -726,6 +728,16 @@ def generate_diagram(resources: list[dict], connections: list[dict] = None,
     """
     if not resources:
         return "graph TB\n    empty[No resources discovered]"
+
+    # Normalize connections to dicts
+    norm_conns = []
+    for c in (connections or []):
+        if hasattr(c, 'to_dict'):
+            norm_conns.append(c.to_dict())
+        elif isinstance(c, dict):
+            norm_conns.append(c)
+        else:
+            norm_conns.append({"source_id": getattr(c, "source_id", ""), "target_id": getattr(c, "target_id", ""), "connection_type": getattr(c, "connection_type", "")})
 
     views = {
         "default": _view_default,
@@ -735,7 +747,7 @@ def generate_diagram(resources: list[dict], connections: list[dict] = None,
         "traffic-flow": _view_traffic_flow,
     }
     fn = views.get(view_type, _view_default)
-    return fn(resources, connections or [])
+    return fn(resources, norm_conns)
 
 
 def _view_default(resources: list[dict], connections: list[dict]) -> str:
