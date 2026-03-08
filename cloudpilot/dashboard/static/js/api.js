@@ -5,15 +5,25 @@ const API = {
     baseUrl: '',
 
     async _fetch(path, options = {}) {
-        const resp = await fetch(`${this.baseUrl}${path}`, {
-            headers: { 'Content-Type': 'application/json' },
-            ...options,
-        });
-        if (!resp.ok) {
-            const err = await resp.json().catch(() => ({ detail: resp.statusText }));
-            throw new Error(err.detail || `HTTP ${resp.status}`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 300000); // 5 min timeout
+        try {
+            const resp = await fetch(`${this.baseUrl}${path}`, {
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
+                ...options,
+            });
+            clearTimeout(timeout);
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+                throw new Error(err.detail || `HTTP ${resp.status}`);
+            }
+            return resp.json();
+        } catch (e) {
+            clearTimeout(timeout);
+            if (e.name === 'AbortError') throw new Error('Request timed out. Discovery across all regions can take a few minutes — try again.');
+            throw e;
         }
-        return resp.json();
     },
 
     chat(message, sessionId) {
