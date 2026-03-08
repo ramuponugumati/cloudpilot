@@ -88,10 +88,10 @@ const Chat = {
             } catch (e) { return ''; }
         });
 
-        // Mermaid blocks
+        // Mermaid blocks — use <pre> to preserve newlines for mermaid parser
         html = html.replace(/```mermaid\n([\s\S]*?)```/g, (_, code) => {
             const id = `mermaid-${++this.mermaidCounter}`;
-            return `<div class="mermaid-container" id="${id}">${this.escapeHtml(code.trim())}</div>`;
+            return `<div class="mermaid-container" id="${id}"><pre style="display:none">${this.escapeHtml(code.trim())}</pre></div>`;
         });
 
         // Code blocks with language
@@ -181,11 +181,12 @@ const Chat = {
         // Render mermaid diagrams
         container.querySelectorAll('.mermaid-container').forEach(async (el) => {
             try {
-                const code = el.textContent;
+                const pre = el.querySelector('pre');
+                const code = pre ? pre.textContent : el.textContent;
                 const { svg } = await mermaid.render(el.id + '-svg', code);
                 el.innerHTML = svg;
             } catch (e) {
-                el.innerHTML = `<pre style="color:#ff5252">Diagram error: ${e.message}</pre>`;
+                el.innerHTML = `<pre style="color:#ff5252;display:block">Diagram error: ${e.message}</pre>`;
             }
         });
         // Highlight code blocks
