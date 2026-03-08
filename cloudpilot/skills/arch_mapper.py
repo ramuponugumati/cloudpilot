@@ -191,7 +191,7 @@ class ArchMapper(BaseSkill):
         resources = []
         s3 = get_client("s3", profile=profile, region="us-east-1")
         for bucket in s3.list_buckets().get("Buckets", []):
-            name = bucket["BucketName"]
+            name = bucket.get("BucketName") or bucket.get("Name", "")
             try:
                 loc = s3.get_bucket_location(Bucket=name)
                 region = loc.get("LocationConstraint") or "us-east-1"
