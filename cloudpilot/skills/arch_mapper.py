@@ -787,56 +787,46 @@ def generate_diagram(resources: list[dict], connections: list = None,
 
 
 def _view_default(resources: list[dict], connections: list[dict]) -> str:
-    """Full architecture grouped by layer with connections."""
-    lines = ["graph TB"]
+    """Mind-map style architecture diagram grouped by layer and service."""
+    lines = ["mindmap"]
+    lines.append("  root((☁️ AWS Architecture))")
 
-    # Group by layer
-    by_layer: dict[str, list[dict]] = {}
+    # Group by layer, then by service within each layer
+    by_layer: dict[str, dict[str, list[dict]]] = {}
     for r in resources:
         layer = r.get("layer", "Other")
-        by_layer.setdefault(layer, []).append(r)
+        svc = r.get("service", "other")
+        by_layer.setdefault(layer, {}).setdefault(svc, []).append(r)
 
-    # Render layers in order
     for layer in LAYER_ORDER:
-        items = by_layer.get(layer, [])
-        if not items:
+        services = by_layer.get(layer, {})
+        if not services:
             continue
-        shown, collapsed = _collapse_if_needed(items)
-        lines.append(f'    subgraph {layer}["{layer.replace("_", " ")}"]')
-        for r in shown:
-            sid, label = _node(r)
-            lines.append(f'        {sid}["{label}"]')
-        if collapsed:
-            by_svc: dict[str, int] = {}
-            for r in collapsed:
-                svc = r.get("service", "other")
-                by_svc[svc] = by_svc.get(svc, 0) + 1
-            for svc, count in by_svc.items():
-                icon = ICONS.get(svc, "📎")
-                lines.append(f'        {_safe_id(svc)}_summary["{icon} {count} {svc} resources"]')
-        lines.append("    end")
-
-    # Render "Other" layer if any
-    other = by_layer.get("Other", []) + by_layer.get("", [])
-    if other:
-        lines.append('    subgraph Other["Other"]')
-        for r in other[:20]:
-            sid, label = _node(r)
-            lines.append(f'        {sid}["{label}"]')
-        lines.append("    end")
-
-    # Draw connections
-    for conn in connections:
-        src = _safe_id(conn.get("source_id", ""))
-        tgt = _safe_id(conn.get("target_id", ""))
-        ctype = conn.get("connection_type", "")
-        if src and tgt and src != tgt:
-            if ctype == "elb_target":
-                lines.append(f"    {src} -->|traffic| {tgt}")
-            elif ctype == "security_group_ref":
-                lines.append(f"    {src} -.->|sg| {tgt}")
+        total = sum(len(v) for v in services.values())
+        lines.append(f"    {layer.replace('_', ' ')} [{total}]")
+        for svc, items in services.items():
+            icon = ICONS.get(svc, "📎")
+            if len(items) > 8:
+                lines.append(f"      {icon} {svc} ({len(items)})")
+                # Show top 5 by name
+                for r in items[:5]:
+                    name = (r.get("name") or r.get("id", ""))[:25]
+                    lines.append(f"        {name}")
+                if len(items) > 5:
+                    lines.append(f"        +{len(items)-5} more")
             else:
-                lines.append(f"    {src} --> {tgt}")
+                lines.append(f"      {icon} {svc} ({len(items)})")
+                for r in items:
+                    name = (r.get("name") or r.get("id", ""))[:25]
+                    lines.append(f"        {name}")
+
+    # Other layer
+    other = by_layer.get("Other", {})
+    if other:
+        total = sum(len(v) for v in other.values())
+        lines.append(f"    Other [{total}]")
+        for svc, items in other.items():
+            lines.append(f"      {svc} ({len(items)})")
 
     return "\n".join(lines)
 
