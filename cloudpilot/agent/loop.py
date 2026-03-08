@@ -168,9 +168,17 @@ class CloudPilotAgent:
                     toolConfig={"tools": TOOL_DEFINITIONS},
                 )
             except Exception as e:
-                error_msg = f"Something went wrong talking to the AI model. Please try again."
                 logger.error(f"Bedrock converse error: {e}")
-                return error_msg
+                # If conversation history is corrupted (stale tool_use without tool_result),
+                # reset history to just the current message and retry once
+                if "tool_use" in str(e) and "tool_result" in str(e) and turn == 0:
+                    logger.warning("Resetting corrupted conversation history and retrying")
+                    self.conversation_history = [{
+                        "role": "user",
+                        "content": [{"text": user_message}],
+                    }]
+                    continue
+                return "Something went wrong talking to the AI model. Please try again."
 
             output = response.get("output", {})
             message = output.get("message", {})
