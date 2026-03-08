@@ -52,62 +52,69 @@ class ArchMapper(BaseSkill):
         )
 
     def discover(self, regions, profile=None) -> dict:
-        """Full resource discovery with anti-pattern detection, service recommendations,
-        layer classification, and connection mapping.
+        """Full resource discovery with parallel scanning and smart region selection.
+        If >5 regions, auto-narrows to top 5 by Cost Explorer spend."""
+        import concurrent.futures
 
-        Returns:
-            dict with keys: resources, anti_patterns, service_recommendations,
-            connections, diagram, summary.
-        """
         resources = []
         errors = []
         acct = get_account_id(profile)
 
-        # Global resources (S3, CloudFront)
-        for scanner_name, scanner_fn in [("s3", self._discover_s3), ("cloudfront", self._discover_cloudfront)]:
-            try:
-                resources.extend(scanner_fn(profile))
-            except Exception as e:
-                logger.warning(f"Discovery error for {scanner_name} (global): {e}")
-                errors.append(f"{scanner_name}/global: {e}")
+        # Smart region selection: narrow to top 5 by spend
+        if len(regions) > 5:
+            active = self._get_active_regions(profile, max_regions=5)
+            if active:
+                logger.info(f"Narrowed {len(regions)} regions to top {len(active)} by spend: {active}")
+                regions = active
 
-        # Regional resources
-        regional_scanners = [
-            ("ec2", self._discover_ec2),
-            ("rds", self._discover_rds),
-            ("lambda", self._discover_lambda),
-            ("ecs", self._discover_ecs),
-            ("vpc", self._discover_vpc),
-            ("dynamodb", self._discover_dynamodb),
-            ("sqs", self._discover_sqs),
-            ("sns", self._discover_sns),
-            ("apigateway", self._discover_apigw),
-            ("elb", self._discover_elb),
-        ]
-        for svc_name, scanner in regional_scanners:
-            for region in regions:
+        # Global resources (S3, CloudFront) — parallel
+        global_scanners = [("s3", self._discover_s3), ("cloudfront", self._discover_cloudfront)]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            futures = {pool.submit(fn, profile): name for name, fn in global_scanners}
+            for future in concurrent.futures.as_completed(futures):
+                name = futures[future]
                 try:
-                    resources.extend(scanner(region, profile))
+                    resources.extend(future.result())
                 except Exception as e:
-                    logger.warning(f"Discovery error for {svc_name} in {region}: {e}")
-                    errors.append(f"{svc_name}/{region}: {e}")
+                    logger.warning(f"Discovery error for {name} (global): {e}")
+                    errors.append(f"{name}/global: {e}")
 
-        # Enrich resources with account_id and layer classification
+        # Regional resources — all service×region combos in parallel
+        regional_scanners = [
+            ("ec2", self._discover_ec2), ("rds", self._discover_rds),
+            ("lambda", self._discover_lambda), ("ecs", self._discover_ecs),
+            ("vpc", self._discover_vpc), ("dynamodb", self._discover_dynamodb),
+            ("sqs", self._discover_sqs), ("sns", self._discover_sns),
+            ("apigateway", self._discover_apigw), ("elb", self._discover_elb),
+        ]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as pool:
+            futures = {}
+            for svc_name, scanner in regional_scanners:
+                for region in regions:
+                    future = pool.submit(scanner, region, profile)
+                    futures[future] = f"{svc_name}/{region}"
+            for future in concurrent.futures.as_completed(futures):
+                label = futures[future]
+                try:
+                    resources.extend(future.result())
+                except Exception as e:
+                    logger.warning(f"Discovery error for {label}: {e}")
+                    errors.append(f"{label}: {e}")
+
+        # Enrich resources
         for r in resources:
             r["account_id"] = acct
             r.setdefault("metadata", {})
             r.setdefault("tags", {})
             r["layer"] = self.classify_layer(r)
 
-        # Run analysis passes
+        # Analysis passes
         anti_patterns = self.detect_anti_patterns(resources)
         service_recommendations = self.detect_service_recommendations(resources)
         connections = self.map_connections(resources)
-        # Serialize connections for diagram and return
         conn_dicts = [c.to_dict() if hasattr(c, "to_dict") else c for c in connections]
         diagram = self._generate_mermaid(resources, conn_dicts)
 
-        # Build summary
         by_service: dict[str, int] = {}
         for r in resources:
             svc = r.get("service", "unknown")
@@ -117,7 +124,7 @@ class ArchMapper(BaseSkill):
             "resources": resources,
             "anti_patterns": [ap.to_dict() if hasattr(ap, "to_dict") else ap for ap in anti_patterns],
             "service_recommendations": [sr.to_dict() if hasattr(sr, "to_dict") else sr for sr in service_recommendations],
-            "connections": [c.to_dict() if hasattr(c, "to_dict") else c for c in connections],
+            "connections": conn_dicts,
             "diagram": diagram,
             "errors": errors,
             "summary": {
