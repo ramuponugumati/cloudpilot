@@ -139,25 +139,32 @@ body {
 
 .action-btn:hover { transform: translateX(4px); }
 
-/* Skill Tags — colorful bubbles with pop-out hover */
-.skills-list { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Skill Tags — uniform grid with colorful bubbles */
+.skills-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
 .skill-tag {
     --skill-color: #00b4ff;
     font-size: 11px; font-weight: 500;
     color: var(--skill-color);
-    padding: 6px 12px;
+    padding: 8px 6px;
     background: color-mix(in srgb, var(--skill-color) 8%, var(--bg-card));
     border: 1px solid color-mix(in srgb, var(--skill-color) 25%, transparent);
-    border-radius: 20px; cursor: pointer;
+    border-radius: 10px; cursor: pointer;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    white-space: nowrap;
+    text-align: center;
     position: relative;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .skill-tag:hover {
     color: #fff;
     background: var(--skill-color);
     border-color: var(--skill-color);
-    transform: scale(1.12) translateY(-3px);
+    transform: scale(1.08) translateY(-2px);
     box-shadow: 0 6px 20px color-mix(in srgb, var(--skill-color) 40%, transparent),
                 0 0 12px color-mix(in srgb, var(--skill-color) 20%, transparent);
     z-index: 2;
