@@ -135,6 +135,35 @@ class ArchMapper(BaseSkill):
             },
         }
 
+    def _get_active_regions(self, profile=None, max_regions=5) -> list[str]:
+        """Query Cost Explorer for top regions by spend in the last 30 days."""
+        try:
+            from datetime import datetime, timedelta
+            ce = get_client("ce", profile=profile, region="us-east-1")
+            now = datetime.utcnow()
+            resp = ce.get_cost_and_usage(
+                TimePeriod={
+                    "Start": (now - timedelta(days=30)).strftime("%Y-%m-%d"),
+                    "End": now.strftime("%Y-%m-%d"),
+                },
+                Granularity="MONTHLY",
+                Metrics=["UnblendedCost"],
+                GroupBy=[{"Type": "DIMENSION", "Key": "REGION"}],
+            )
+            region_costs: dict[str, float] = {}
+            for period in resp.get("ResultsByTime", []):
+                for group in period.get("Groups", []):
+                    region = group["Keys"][0]
+                    cost = float(group["Metrics"]["UnblendedCost"]["Amount"])
+                    if region and cost > 0 and region != "global" and not region.startswith("No "):
+                        region_costs[region] = region_costs.get(region, 0) + cost
+            sorted_regions = sorted(region_costs.items(), key=lambda x: x[1], reverse=True)
+            top = [r for r, _ in sorted_regions[:max_regions]]
+            return top if top else []
+        except Exception as e:
+            logger.warning(f"Could not get active regions from Cost Explorer: {e}")
+            return []
+
     def _discover_ec2(self, region, profile=None):
         resources = []
         ec2 = get_client("ec2", profile=profile, region=region)
