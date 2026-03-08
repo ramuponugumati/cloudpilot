@@ -787,11 +787,11 @@ def generate_diagram(resources: list[dict], connections: list = None,
 
 
 def _view_default(resources: list[dict], connections: list[dict]) -> str:
-    """Mind-map style architecture diagram grouped by layer and service."""
+    """Mind-map style architecture overview — layers → services → resource counts."""
     lines = ["mindmap"]
     lines.append("  root((☁️ AWS Architecture))")
 
-    # Group by layer, then by service within each layer
+    # Group by layer, then by service
     by_layer: dict[str, dict[str, list[dict]]] = {}
     for r in resources:
         layer = r.get("layer", "Other")
@@ -803,30 +803,17 @@ def _view_default(resources: list[dict], connections: list[dict]) -> str:
         if not services:
             continue
         total = sum(len(v) for v in services.values())
-        lines.append(f"    {layer.replace('_', ' ')} [{total}]")
-        for svc, items in services.items():
+        layer_label = layer.replace("_", " ")
+        lines.append(f"    {layer_label}")
+        for svc, items in sorted(services.items(), key=lambda x: -len(x[1])):
             icon = ICONS.get(svc, "📎")
-            if len(items) > 8:
-                lines.append(f"      {icon} {svc} ({len(items)})")
-                # Show top 5 by name
-                for r in items[:5]:
-                    name = (r.get("name") or r.get("id", ""))[:25]
-                    lines.append(f"        {name}")
-                if len(items) > 5:
-                    lines.append(f"        +{len(items)-5} more")
-            else:
-                lines.append(f"      {icon} {svc} ({len(items)})")
-                for r in items:
-                    name = (r.get("name") or r.get("id", ""))[:25]
-                    lines.append(f"        {name}")
-
-    # Other layer
-    other = by_layer.get("Other", {})
-    if other:
-        total = sum(len(v) for v in other.values())
-        lines.append(f"    Other [{total}]")
-        for svc, items in other.items():
-            lines.append(f"      {svc} ({len(items)})")
+            count = len(items)
+            # Show service with count and top 3 named resources
+            lines.append(f"      {icon} {svc.upper()} x{count}")
+            named = [r.get("name") or r.get("id", "") for r in items if r.get("name")][:3]
+            for n in named:
+                clean = n[:20].replace("(", "").replace(")", "").replace('"', "")
+                lines.append(f"        {clean}")
 
     return "\n".join(lines)
 
