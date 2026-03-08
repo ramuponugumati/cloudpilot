@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Health check — show skills count in status badge
     try {
         const health = await API.health();
-        document.getElementById('status-text').textContent = `⚡ ${health.skills} skills loaded`;
+        document.getElementById('status-text').textContent = `⚡ Skills Ready`;
     } catch (e) {
         document.getElementById('status-indicator').className = 'status-dot';
         document.getElementById('status-indicator').style.background = '#ff5252';
