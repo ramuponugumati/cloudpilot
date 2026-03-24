@@ -99,10 +99,70 @@ def create_mcp_server(profile: Optional[str] = None):
             "total_impact": sum(f.get("monthly_impact", 0) for f in agent.findings_store),
         })
 
+    @mcp.tool()
+    def run_all_skills(regions: Optional[list[str]] = None) -> str:
+        """Run all CloudPilot scanning skills in parallel."""
+        from cloudpilot.core import SkillRegistry
+        from cloudpilot.aws_client import get_regions
+        import cloudpilot.skills  # noqa
+        import concurrent.futures
+        scan_regions = regions or get_regions(profile=profile)
+        skills = list(SkillRegistry.all().values())
+        all_findings = []
+        summaries = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(skills)) as pool:
+            futures = {pool.submit(s.scan, scan_regions, profile): s for s in skills}
+            for future in concurrent.futures.as_completed(futures):
+                skill = futures[future]
+                try:
+                    result = future.result()
+                    findings = [f.to_dict() for f in result.findings]
+                    all_findings.extend(findings)
+                    summaries.append({"skill": skill.name, "findings": len(findings), "impact": round(result.total_impact, 2)})
+                except Exception as e:
+                    summaries.append({"skill": skill.name, "error": str(e)})
+        agent = _get_agent()
+        agent.findings_store.extend(all_findings)
+        return json.dumps({"total_findings": len(all_findings), "skills_summary": summaries}, default=str)
+
+    @mcp.tool()
+    def generate_diagram(view_type: str = "default") -> str:
+        """Generate Mermaid architecture diagram. Views: default, security, cost, multi-region, traffic-flow."""
+        agent = _get_agent()
+        if not agent.resources_store:
+            return json.dumps({"error": "No resources discovered. Run discover_architecture first."})
+        from cloudpilot.skills.arch_mapper import generate_diagram as gen_diag
+        mermaid = gen_diag(agent.resources_store, [], view_type)
+        return json.dumps({"diagram": mermaid, "view_type": view_type, "resource_count": len(agent.resources_store)})
+
+    @mcp.tool()
+    def aws_docs_search(query: str, max_results: int = 5) -> str:
+        """Search official AWS documentation for authoritative technical details."""
+        from cloudpilot.agent.web_search import search_aws_docs
+        return json.dumps(search_aws_docs(query, max_results), default=str)
+
+    @mcp.tool()
+    def aws_blog_search(query: str, max_results: int = 5) -> str:
+        """Search AWS What's New and blog posts for latest launches and features."""
+        from cloudpilot.agent.web_search import search_aws_blog
+        return json.dumps(search_aws_blog(query, max_results), default=str)
+
+    @mcp.tool()
+    def remediate_finding(finding: dict) -> str:
+        """Execute a one-click remediation for a finding. Requires user confirmation."""
+        from cloudpilot.dashboard.remediation import has_remediation, execute_remediation
+        if not has_remediation(finding):
+            return json.dumps({"error": "No remediation available for this finding type"})
+        result = execute_remediation(finding, profile)
+        return json.dumps({"success": result.success, "action": result.action, "message": result.message}, default=str)
+
     return mcp
 
 
-def run_mcp_server(profile: Optional[str] = None):
-    """Start MCP server on stdio transport."""
+def run_mcp_server(profile: Optional[str] = None, transport: str = "stdio"):
+    """Start MCP server. Transport: 'stdio' (local) or 'sse' (HTTP)."""
     mcp = create_mcp_server(profile=profile)
-    mcp.run(transport="stdio")
+    if transport == "sse":
+        mcp.run(transport="sse")
+    else:
+        mcp.run(transport="stdio")

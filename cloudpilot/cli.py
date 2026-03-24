@@ -229,12 +229,18 @@ def dashboard(ctx, host, port, api_key):
 
 
 @cli.command("mcp")
+@cli.command("mcp")
+@click.option("--transport", type=click.Choice(["stdio", "sse"]), default="stdio", help="Transport: stdio (local) or sse (HTTP)")
 @click.pass_context
-def mcp_cmd(ctx):
+def mcp_cmd(ctx, transport):
     """Start MCP server for tool integration"""
     profile = ctx.obj["profile"]
     from cloudpilot.mcp_server import run_mcp_server
-    run_mcp_server(profile=profile)
+    if transport == "sse":
+        console.print(Panel(f"[bold cyan]☁️✈️ CloudPilot MCP Server (HTTP/SSE)[/bold cyan]\n"
+                            f"[dim]Profile: {profile or 'default'}[/dim]",
+                            box=box.DOUBLE, style="cyan"))
+    run_mcp_server(profile=profile, transport=transport)
 
 
 @cli.command("skills")
