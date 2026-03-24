@@ -178,17 +178,12 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
                 new_findings = strands_state["findings_store"][findings_before:]
             remediable = []
 
-            # Extract cost chart data if cost-radar was just run
+            # Extract cost chart data ONLY if cost-radar was run in THIS turn
             chart_data = None
-            if app.state.agent_type == "legacy":
-                chart_data = _extract_cost_chart_data(agent)
-            else:
-                # Strands agent — check strands_state findings
-                from cloudpilot.agent.strands_agent import _state as strands_state_ref
-                for finding in reversed(strands_state_ref["findings_store"]):
-                    if finding.get("skill") == "cost-radar" and finding.get("metadata", {}).get("chart_data"):
-                        chart_data = finding["metadata"]["chart_data"]
-                        break
+            for f in new_findings:
+                if f.get("skill") == "cost-radar" and f.get("metadata", {}).get("chart_data"):
+                    chart_data = f["metadata"]["chart_data"]
+                    break
 
             for f in new_findings:
                 if has_remediation(f):
