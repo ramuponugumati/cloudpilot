@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloudpilot"
+version = "0.2.0"
+description = "AI-powered AWS Infrastructure Intelligence Platform"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.10"
+dependencies = [
+    "boto3>=1.28.0",
+    "rich>=13.0.0",
+    "click>=8.0.0",
+    "requests>=2.28.0",
+]
+
+[project.optional-dependencies]
+dashboard = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+]
+mcp = [
+    "mcp>=1.0.0",
+]
+strands = [
+    "strands-agents>=0.1.0",
+    "strands-agents-tools>=0.1.0",
+]
+memory = [
+    "bedrock-agentcore>=1.4.0",
+]
+all = [
+    "cloudpilot[dashboard,mcp,strands,memory]",
+]
+test = [
+    "pytest>=7.0",
+    "hypothesis>=6.0",
+    "httpx>=0.24",
+    "pytest-asyncio>=0.21",
+]
+
+[project.scripts]
+cloudpilot = "cloudpilot.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["cloudpilot*"]
+
+[tool.setuptools.package-data]
+cloudpilot = ["dashboard/static/**/*"]

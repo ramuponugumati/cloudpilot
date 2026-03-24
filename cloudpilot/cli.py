@@ -229,7 +229,6 @@ def dashboard(ctx, host, port, api_key):
 
 
 @cli.command("mcp")
-@cli.command("mcp")
 @click.option("--transport", type=click.Choice(["stdio", "sse"]), default="stdio", help="Transport: stdio (local) or sse (HTTP)")
 @click.pass_context
 def mcp_cmd(ctx, transport):
@@ -241,6 +240,34 @@ def mcp_cmd(ctx, transport):
                             f"[dim]Profile: {profile or 'default'}[/dim]",
                             box=box.DOUBLE, style="cyan"))
     run_mcp_server(profile=profile, transport=transport)
+
+
+@cli.command("serve")
+@click.option("--host", default="127.0.0.1", help="Server host")
+@click.option("--port", default=8080, type=int, help="Dashboard port")
+@click.option("--api-key", default=None, help="API key for auth")
+@click.pass_context
+def serve(ctx, host, port, api_key):
+    """Start Dashboard + MCP HTTP server together"""
+    import threading
+    import uvicorn
+    from cloudpilot.dashboard.server import create_app
+    from cloudpilot.dashboard.security import generate_api_key
+    from cloudpilot.mcp_server import create_mcp_server
+
+    profile = ctx.obj["profile"]
+    effective_key = api_key or os.environ.get("CLOUDPILOT_API_KEY")
+
+    console.print(Panel(
+        f"[bold cyan]☁️✈️ CloudPilot Server[/bold cyan]\n"
+        f"[dim]Dashboard: http://{host}:{port} | MCP: stdio\n"
+        f"Profile: {profile or 'default'}[/dim]",
+        box=box.DOUBLE, style="cyan"))
+
+    app = create_app(profile=profile, api_key=effective_key)
+    import webbrowser
+    webbrowser.open(f"http://{host}:{port}")
+    uvicorn.run(app, host=host, port=port)
 
 
 @cli.command("skills")
