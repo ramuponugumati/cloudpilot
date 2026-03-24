@@ -6,6 +6,7 @@ import os
 import time
 from typing import Optional
 
+import boto3
 from strands import Agent, tool
 from strands.models import BedrockModel
 
@@ -240,9 +241,12 @@ def create_agent(profile: Optional[str] = None, memory_id: Optional[str] = None)
     _state["resources_store"] = []
     _state["skills_run"] = []
 
+    # Create profile-aware boto3 session
+    session = boto3.Session(profile_name=profile, region_name=BEDROCK_REGION) if profile else boto3.Session(region_name=BEDROCK_REGION)
+
     model = BedrockModel(
         model_id=MODEL_ID,
-        region_name=BEDROCK_REGION,
+        boto_session=session,
     )
 
     hooks = []

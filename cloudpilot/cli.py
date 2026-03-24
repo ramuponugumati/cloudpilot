@@ -162,16 +162,39 @@ def iac(ctx, fmt, scope, output_file):
 def chat_cmd(ctx):
     """Interactive chat with CloudPilot agent"""
     profile = ctx.obj["profile"]
-    from cloudpilot.agent.loop import CloudPilotAgent
-    agent = CloudPilotAgent(profile=profile)
-    console.print(Panel("[bold cyan]☁️✈️ CloudPilot Chat[/bold cyan]\n[dim]Type 'exit' to quit[/dim]",
+    use_legacy = os.environ.get("CLOUDPILOT_AGENT", "").lower() == "legacy"
+    agent = None
+    agent_type = None
+
+    if use_legacy:
+        from cloudpilot.agent.loop import CloudPilotAgent
+        agent = CloudPilotAgent(profile=profile)
+        agent_type = "legacy"
+    else:
+        try:
+            from cloudpilot.agent.strands_agent import create_agent
+            memory_id = os.environ.get("CLOUDPILOT_MEMORY_ID")
+            agent = create_agent(profile=profile, memory_id=memory_id)
+            agent_type = "strands"
+        except Exception as e:
+            console.print(f"[yellow]Strands agent unavailable ({e}), using legacy agent[/yellow]")
+            from cloudpilot.agent.loop import CloudPilotAgent
+            agent = CloudPilotAgent(profile=profile)
+            agent_type = "legacy"
+
+    engine_label = "Strands" if agent_type == "strands" else "Legacy"
+    console.print(Panel(f"[bold cyan]☁️✈️ CloudPilot Chat[/bold cyan]\n[dim]Engine: {engine_label} | Type 'exit' to quit[/dim]",
                         box=box.DOUBLE, style="cyan"))
     while True:
         try:
             user_input = console.input("[bold green]You:[/bold green] ")
             if user_input.strip().lower() in ("exit", "quit", "q"):
                 break
-            response = agent.chat(user_input)
+            if agent_type == "strands":
+                result = agent(user_input)
+                response = str(result)
+            else:
+                response = agent.chat(user_input)
             console.print(f"\n[bold cyan]CloudPilot:[/bold cyan] {response}\n")
         except (KeyboardInterrupt, EOFError):
             break

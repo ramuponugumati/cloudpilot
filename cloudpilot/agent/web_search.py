@@ -323,3 +323,7 @@ def _clean_html(text: str) -> str:
     clean = re.sub(r'<[^>]+>', '', text)
     clean = unescape(clean)
     return clean.strip()
+
+
+## Capacity Reservation Summary
+
