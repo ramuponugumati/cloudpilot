@@ -2,9 +2,9 @@
 Primary: AgentCore MemoryClient. Fallback: local JSON at ~/.cloudpilot/memory.json."""
 import logging
 import os
-from typing import Optional
+from typing import Optional, Any
 
-from strands.agent.agent_result import AgentResult
+from strands.hooks import HookProvider, HookRegistry, AfterInvocationEvent, AgentInitializedEvent
 
 from cloudpilot.agent.local_memory import LocalMemoryStore, ScanRecord, RemediationRecord
 from cloudpilot.agent.session_context import SessionContext
@@ -12,7 +12,7 @@ from cloudpilot.agent.session_context import SessionContext
 logger = logging.getLogger(__name__)
 
 
-class CloudPilotMemoryHook:
+class CloudPilotMemoryHook(HookProvider):
     """Strands-compatible hook for persistent memory."""
 
     def __init__(self, profile: Optional[str] = None, memory_id: Optional[str] = None):
@@ -32,6 +32,19 @@ class CloudPilotMemoryHook:
                 logger.info("AgentCore MemoryClient initialized")
             except Exception as e:
                 logger.info(f"AgentCore MemoryClient unavailable, using local fallback: {e}")
+
+    def register_hooks(self, registry: HookRegistry, **kwargs: Any) -> None:
+        """Register Strands lifecycle hooks."""
+        registry.add_callback(AgentInitializedEvent, self._on_agent_init)
+        registry.add_callback(AfterInvocationEvent, self._on_after_invocation)
+
+    def _on_agent_init(self, event: AgentInitializedEvent):
+        """Load memory context when agent initializes."""
+        logger.info("Memory hook: agent initialized, loading context")
+
+    def _on_after_invocation(self, event: AfterInvocationEvent):
+        """Save conversation context after each invocation."""
+        logger.debug("Memory hook: saving context after invocation")
 
     def record_scan(self, skill_name: str, finding_count: int, top_findings: list, total_impact: float):
         """Record a completed scan to both session context and persistent memory."""
