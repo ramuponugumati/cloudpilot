@@ -57,10 +57,16 @@ class DiscoverRequest(BaseModel):
 
 
 def _extract_cost_chart_data(agent) -> Optional[dict]:
-    """Extract cost chart data from the agent's findings store if cost-radar was recently run."""
-    for finding in reversed(agent.findings_store):
-        if finding.get("skill") == "cost-radar" and finding.get("metadata", {}).get("chart_data"):
-            return finding["metadata"]["chart_data"]
+    """Extract cost chart data only if cost-radar was run in the CURRENT turn.
+    Uses a marker to avoid re-sending charts on every subsequent message."""
+    last_chart_sent = getattr(agent, '_last_chart_sent_count', 0)
+    current_count = sum(1 for f in agent.findings_store
+                        if f.get("skill") == "cost-radar" and f.get("metadata", {}).get("chart_data"))
+    if current_count > last_chart_sent:
+        agent._last_chart_sent_count = current_count
+        for finding in reversed(agent.findings_store):
+            if finding.get("skill") == "cost-radar" and finding.get("metadata", {}).get("chart_data"):
+                return finding["metadata"]["chart_data"]
     return None
 
 
@@ -72,11 +78,28 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
 
     # Lazy-init agent (created on first chat request)
     app.state.agent = None
+    app.state.agent_type = None  # "strands" or "legacy"
 
     def _get_agent():
         if app.state.agent is None:
-            from cloudpilot.agent.loop import CloudPilotAgent
-            app.state.agent = CloudPilotAgent(profile=app.state.profile)
+            use_legacy = os.environ.get("CLOUDPILOT_AGENT", "").lower() == "legacy"
+            if use_legacy:
+                from cloudpilot.agent.loop import CloudPilotAgent
+                app.state.agent = CloudPilotAgent(profile=app.state.profile)
+                app.state.agent_type = "legacy"
+                logger.info("Using legacy Bedrock Converse agent")
+            else:
+                try:
+                    from cloudpilot.agent.strands_agent import create_agent
+                    memory_id = os.environ.get("CLOUDPILOT_MEMORY_ID")
+                    app.state.agent = create_agent(profile=app.state.profile, memory_id=memory_id)
+                    app.state.agent_type = "strands"
+                    logger.info("Using Strands agent")
+                except Exception as e:
+                    logger.warning(f"Strands agent failed, falling back to legacy: {e}")
+                    from cloudpilot.agent.loop import CloudPilotAgent
+                    app.state.agent = CloudPilotAgent(profile=app.state.profile)
+                    app.state.agent_type = "legacy"
         return app.state.agent
 
     # --- Security ---
@@ -137,20 +160,46 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
         audit.log_chat(client_ip, len(clean_message))
         try:
             agent = _get_agent()
-            logger.info(f"Chat: profile={agent.profile}, bedrock_region={agent.bedrock.meta.region_name}")
-            if req.session_id:
-                agent.session_id = req.session_id
-            response = await asyncio.to_thread(agent.chat, clean_message)
-            logger.info(f"Chat response length: {len(response)}, first 100: {response[:100]}")
-            response = sanitize_output(response)
 
-            # Inject cost chart data if cost-radar was just run
-            chart_data = _extract_cost_chart_data(agent)
-            if chart_data:
-                import json as _json
-                response_payload = {"response": response, "chart_data": chart_data}
+            # Snapshot findings count BEFORE this chat turn
+            if app.state.agent_type == "legacy":
+                findings_before = len(agent.findings_store)
+                logger.info(f"Chat: profile={agent.profile}, bedrock_region={agent.bedrock.meta.region_name}")
+                if req.session_id:
+                    agent.session_id = req.session_id
+                response = await asyncio.to_thread(agent.chat, clean_message)
+                new_findings = agent.findings_store[findings_before:]
             else:
-                response_payload = {"response": response}
+                # Strands agent
+                from cloudpilot.agent.strands_agent import _state as strands_state
+                findings_before = len(strands_state["findings_store"])
+                result = await asyncio.to_thread(agent, clean_message)
+                response = str(result)
+                new_findings = strands_state["findings_store"][findings_before:]
+            remediable = []
+
+            # Extract cost chart data if cost-radar was just run
+            chart_data = None
+            if app.state.agent_type == "legacy":
+                chart_data = _extract_cost_chart_data(agent)
+
+            for f in new_findings:
+                if has_remediation(f):
+                    remediable.append({
+                        "skill": f.get("skill", ""),
+                        "title": f.get("title", ""),
+                        "resource_id": f.get("resource_id", ""),
+                        "region": f.get("region", ""),
+                        "severity": f.get("severity", "info"),
+                        "monthly_impact": f.get("monthly_impact", 0),
+                        "recommended_action": f.get("recommended_action", ""),
+                    })
+
+            response_payload = {"response": response}
+            if chart_data:
+                response_payload["chart_data"] = chart_data
+            if remediable:
+                response_payload["remediable_findings"] = remediable
             return response_payload
         except Exception as e:
             logger.error(f"Chat error: {type(e).__name__}: {e}", exc_info=True)

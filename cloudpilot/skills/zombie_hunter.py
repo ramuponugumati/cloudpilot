@@ -21,16 +21,13 @@ class ZombieHunterSkill(BaseSkill):
             ("ebs", self._scan_ebs),
             ("eip", self._scan_eip),
             ("nat", self._scan_nat),
-            ("idle_ec2", lambda r: self._scan_idle_ec2(r, profile, cpu_threshold)),
+            ("idle_ec2", lambda r, p: self._scan_idle_ec2(r, p, cpu_threshold)),
             ("idle_rds", self._scan_idle_rds),
         ]
 
         for name, scanner_fn in scanners:
             try:
-                if name in ("idle_ec2", "idle_rds"):
-                    results = parallel_regions(scanner_fn, regions)
-                else:
-                    results = parallel_regions(lambda r: scanner_fn(r, profile), regions)
+                results = parallel_regions(scanner_fn, regions, profile=profile)
                 findings.extend(results)
             except Exception as e:
                 errors.append(f"{name}: {e}")

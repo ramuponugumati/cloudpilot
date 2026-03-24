@@ -429,3 +429,68 @@ body {
 .cost-message { max-width: 100%; }
 
 .mermaid-src { display: none !important; }
+
+/* Remediation action cards */
+.remediation-cards {
+    display: block;
+    margin-top: 4px;
+}
+.remediation-card {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    padding: 8px 12px;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+.rem-icon {
+    font-size: 1.3em;
+    text-align: center;
+}
+.rem-info {
+    min-width: 0;
+    overflow: hidden;
+}
+.rem-title {
+    color: #e8eeff;
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+.rem-meta {
+    color: #7a84a0;
+    font-size: 0.75em;
+    display: block;
+}
+.rem-btn {
+    border: 1px solid;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.78em;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+.rem-btn:hover:not(:disabled) {
+    filter: brightness(1.3);
+    transform: scale(1.02);
+}
+.rem-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+.rem-followup {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: rgba(0,180,255,0.08);
+    border: 1px solid rgba(0,180,255,0.2);
+    border-radius: 8px;
+    color: #c4ccee;
+    font-size: 0.85em;
+    line-height: 1.5;
+}

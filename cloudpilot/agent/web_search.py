@@ -131,6 +131,104 @@ def _filter_blog_items(items: list[dict], query: str, max_results: int) -> list[
 
 def _fallback_docs_search(query: str, max_results: int = 5) -> dict:
     """Fallback: construct direct documentation URLs based on query keywords."""
+    # Topic-based mappings for cross-cutting queries (best practices, security, etc.)
+    topic_docs = {
+        "best practices": [
+            {"title": "AWS Well-Architected Framework", "snippet": "The AWS Well-Architected Framework describes key concepts, design principles, and architectural best practices for designing and running workloads in the cloud. Covers 6 pillars: Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, and Sustainability.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"},
+            {"title": "AWS Well-Architected — Security Pillar", "snippet": "Best practices for protecting data, systems, and assets. Covers IAM, detection, infrastructure protection, data protection, and incident response.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html"},
+            {"title": "AWS Well-Architected — Cost Optimization Pillar", "snippet": "Best practices for avoiding unnecessary costs. Covers expenditure awareness, cost-effective resources, matching supply and demand, and optimizing over time.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/welcome.html"},
+            {"title": "AWS Well-Architected — Reliability Pillar", "snippet": "Best practices for ensuring workloads perform their intended function correctly and consistently. Covers foundations, workload architecture, change management, and failure management.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html"},
+            {"title": "AWS Well-Architected — Performance Efficiency Pillar", "snippet": "Best practices for using computing resources efficiently. Covers selection, review, monitoring, and trade-offs for compute, storage, database, and networking.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/performance-efficiency-pillar/welcome.html"},
+            {"title": "AWS Well-Architected — Operational Excellence Pillar", "snippet": "Best practices for operations in the cloud. Covers organization, preparation, operation, and evolution of workloads.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/welcome.html"},
+            {"title": "AWS Well-Architected — Sustainability Pillar", "snippet": "Best practices for minimizing environmental impact of cloud workloads. Covers region selection, user behavior patterns, software/architecture patterns, data patterns, hardware patterns, and development/deployment processes.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/sustainability-pillar/sustainability-pillar.html"},
+        ],
+        "security best practices": [
+            {"title": "AWS Security Best Practices", "snippet": "Comprehensive security guidance covering IAM, logging, encryption, network security, and incident response across all AWS services.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html"},
+            {"title": "IAM Best Practices", "snippet": "Best practices for managing AWS Identity and Access Management: use least privilege, enable MFA, use roles instead of long-term keys, rotate credentials.", "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"},
+            {"title": "AWS Security Hub", "snippet": "Centralized security findings and automated compliance checks against best practices like CIS AWS Foundations Benchmark and AWS Foundational Security Best Practices.", "url": "https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html"},
+        ],
+        "cost optimization": [
+            {"title": "AWS Cost Optimization Pillar", "snippet": "Best practices for managing and optimizing AWS costs: right-sizing, Savings Plans, Reserved Instances, Spot Instances, S3 storage classes, and more.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/welcome.html"},
+            {"title": "AWS Cost Explorer", "snippet": "Visualize, understand, and manage your AWS costs and usage over time with detailed breakdowns and forecasting.", "url": "https://docs.aws.amazon.com/cost-management/latest/userguide/ce-what-is.html"},
+            {"title": "AWS Savings Plans", "snippet": "Flexible pricing model offering lower prices on EC2, Fargate, and Lambda usage in exchange for a commitment to a consistent amount of usage.", "url": "https://docs.aws.amazon.com/savingsplans/latest/userguide/what-is-savings-plans.html"},
+        ],
+        "reliability": [
+            {"title": "AWS Reliability Pillar", "snippet": "Best practices for building reliable systems: foundations, workload architecture, change management, failure management, multi-AZ, multi-Region.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html"},
+            {"title": "AWS Disaster Recovery", "snippet": "Strategies for disaster recovery on AWS: backup & restore, pilot light, warm standby, and multi-site active/active.", "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-workloads-on-aws.html"},
+        ],
+        "networking": [
+            {"title": "Amazon VPC User Guide", "snippet": "Design and configure virtual private clouds, subnets, route tables, internet gateways, NAT gateways, and VPC peering.", "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"},
+            {"title": "AWS Transit Gateway", "snippet": "Connect VPCs and on-premises networks through a central hub. Simplifies network architecture and reduces operational overhead.", "url": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html"},
+            {"title": "AWS PrivateLink", "snippet": "Access AWS services and your own services privately without traversing the public internet. Keeps traffic within the AWS network.", "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html"},
+        ],
+        "serverless": [
+            {"title": "AWS Serverless Application Lens", "snippet": "Best practices for serverless applications on AWS using Lambda, API Gateway, DynamoDB, Step Functions, and EventBridge.", "url": "https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/welcome.html"},
+            {"title": "AWS Lambda Best Practices", "snippet": "Function design, handler patterns, cold starts, concurrency, error handling, and performance optimization for Lambda.", "url": "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html"},
+        ],
+        "containers": [
+            {"title": "Amazon ECS Best Practices", "snippet": "Best practices for running containerized applications on ECS: task definitions, networking, security, logging, and auto scaling.", "url": "https://docs.aws.amazon.com/AmazonECS/latest/bestpracticesguide/intro.html"},
+            {"title": "Amazon EKS Best Practices", "snippet": "Best practices for running Kubernetes on AWS: cluster management, security, networking, scalability, and cost optimization.", "url": "https://aws.github.io/aws-eks-best-practices/"},
+        ],
+        "migration": [
+            {"title": "AWS Migration Hub", "snippet": "Central location to track the progress of application migrations across multiple AWS and partner solutions.", "url": "https://docs.aws.amazon.com/migrationhub/latest/ug/whatishub.html"},
+            {"title": "AWS Cloud Migration Strategies (6 R's)", "snippet": "Rehost, Replatform, Repurchase, Refactor, Retire, Retain — strategies for migrating workloads to AWS.", "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/large-migration-guide/migration-strategies.html"},
+        ],
+        "monitoring": [
+            {"title": "Amazon CloudWatch", "snippet": "Monitor AWS resources and applications in real-time. Collect metrics, logs, and events. Set alarms and automate actions.", "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"},
+            {"title": "AWS X-Ray", "snippet": "Analyze and debug distributed applications. Trace requests as they travel through your application.", "url": "https://docs.aws.amazon.com/xray/latest/devguide/aws-xray.html"},
+        ],
+        "database": [
+            {"title": "AWS Database Selection Guide", "snippet": "Choose the right AWS database for your workload: relational (RDS/Aurora), key-value (DynamoDB), document, graph (Neptune), in-memory (ElastiCache), time-series (Timestream).", "url": "https://docs.aws.amazon.com/decision-guides/latest/databases-on-aws-how-to-choose/databases-on-aws-how-to-choose.html"},
+            {"title": "Amazon RDS Best Practices", "snippet": "Best practices for Amazon RDS: Multi-AZ, read replicas, parameter groups, monitoring, backup, and security.", "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_BestPractices.html"},
+        ],
+    }
+
+    query_lower = query.lower()
+
+    # Check topic-based mappings first (for cross-cutting queries)
+    for topic, docs in topic_docs.items():
+        if topic in query_lower:
+            return {"query": query, "source": "AWS Documentation", "results": docs[:max_results]}
+
+    # Also match partial topic keywords for broader coverage
+    topic_keywords = {
+        "best practice": "best practices",
+        "well architected": "best practices",
+        "well-architected": "best practices",
+        "pillar": "best practices",
+        "cost sav": "cost optimization",
+        "cost reduc": "cost optimization",
+        "save money": "cost optimization",
+        "rightsiz": "cost optimization",
+        "secure": "security best practices",
+        "harden": "security best practices",
+        "compliance": "security best practices",
+        "reliable": "reliability",
+        "disaster recovery": "reliability",
+        "high availability": "reliability",
+        "ha ": "reliability",
+        "multi-az": "reliability",
+        "network": "networking",
+        "vpc": "networking",
+        "subnet": "networking",
+        "serverless": "serverless",
+        "lambda best": "serverless",
+        "container": "containers",
+        "docker": "containers",
+        "kubernetes": "containers",
+        "k8s": "containers",
+        "migrat": "migration",
+        "monitor": "monitoring",
+        "observ": "monitoring",
+        "logging": "monitoring",
+        "database": "database",
+        "which database": "database",
+        "db selection": "database",
+    }
+    for keyword, topic_key in topic_keywords.items():
+        if keyword in query_lower and topic_key in topic_docs:
+            return {"query": query, "source": "AWS Documentation", "results": topic_docs[topic_key][:max_results]}
+
     # Map common service keywords to doc URLs
     service_docs = {
         "lambda": ("AWS Lambda", "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"),

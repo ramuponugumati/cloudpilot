@@ -41,13 +41,31 @@ def get_account_id(profile=None):
 
 
 def parallel_regions(fn, regions, profile=None, max_workers=10):
-    """Run fn(region, profile) across regions in parallel, return aggregated results."""
+    """Run fn across regions in parallel, return aggregated results.
+    Supports fn(region, profile) or fn(region) signatures."""
+    import inspect
+    # Detect if fn accepts 2+ positional args (region, profile)
+    try:
+        sig = inspect.signature(fn)
+        params = [p for p in sig.parameters.values()
+                  if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)]
+        takes_profile = len(params) >= 2
+    except (ValueError, TypeError):
+        takes_profile = True  # default to passing profile
+
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = {pool.submit(fn, r, profile): r for r in regions}
+        if takes_profile:
+            futures = {pool.submit(fn, r, profile): r for r in regions}
+        else:
+            futures = {pool.submit(fn, r): r for r in regions}
         for f in as_completed(futures):
             try:
-                results.extend(f.result())
+                result = f.result()
+                if isinstance(result, list):
+                    results.extend(result)
+                elif result is not None:
+                    results.append(result)
             except Exception:
                 pass
     return results

@@ -44,12 +44,15 @@ const Chat = {
         try {
             const data = await API.chat(message);
             this.removeTypingIndicator();
-            this.addMessage('assistant', data.response);
-            // Render cost charts if chart_data is present in the response
+            // Render cost charts FIRST with heading, then text summary below
             if (data.chart_data && data.chart_data.type === 'cost_overview') {
                 console.log('Rendering cost charts:', data.chart_data);
-                console.log('Chart.js available:', typeof Chart !== 'undefined');
                 this._addCostCharts(data.chart_data);
+            }
+            this.addMessage('assistant', data.response);
+            // Render remediation action buttons if findings are available
+            if (data.remediable_findings && data.remediable_findings.length > 0) {
+                this._addRemediationCards(data.remediable_findings);
             }
         } catch (err) {
             this.removeTypingIndicator();
@@ -139,6 +142,8 @@ const Chat = {
         contentDiv.className = 'message-content cost-message';
 
         let html = `<div class="cost-dashboard">`;
+        html += `<h3 style="color:#e8eeff;margin:0 0 16px 0;font-size:1.2em;display:flex;align-items:center;gap:8px">
+            <span style="font-size:1.4em">📊</span> Cost Analysis — ${data.num_months}-Month Overview</h3>`;
         html += `<div class="cost-stats-row">`;
         html += `<div class="cost-stat-card" style="--accent:#00b4ff">
             <div class="stat-icon">💰</div>
@@ -311,6 +316,122 @@ const Chat = {
                 }
             }
         });
+    },
+
+    _addRemediationCards(findings) {
+        const div = document.createElement('div');
+        div.className = 'message assistant';
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+
+        const sevColors = {critical:'#ff1744',high:'#ff9100',medium:'#ffd600',low:'#448aff',info:'#90a4ae'};
+        const actionConfig = {
+            'Unattached EBS': { icon: '💾', label: 'Delete Volume', color: '#ff5252' },
+            'Unused EIP': { icon: '🌐', label: 'Release IP', color: '#ff9100' },
+            'Unused NAT GW': { icon: '🚪', label: 'Delete NAT', color: '#ff5252' },
+            'Idle EC2': { icon: '🖥️', label: 'Stop Instance', color: '#ffd600' },
+            'Idle RDS': { icon: '🗄️', label: 'Stop DB', color: '#ffd600' },
+            'Open port': { icon: '🔒', label: 'Restrict Access', color: '#7c4dff' },
+            'Public S3': { icon: '📦', label: 'Block Public', color: '#7c4dff' },
+            'Old access key': { icon: '🔑', label: 'Deactivate Key', color: '#7c4dff' },
+            'Single-AZ RDS': { icon: '🛡️', label: 'Enable Multi-AZ', color: '#00b4ff' },
+            'No backups': { icon: '💾', label: 'Enable Backups', color: '#00b4ff' },
+            'No VPC Flow': { icon: '📡', label: 'Enable Logs', color: '#00b4ff' },
+            'Untagged': { icon: '🏷️', label: 'Apply Tags', color: '#00e676' },
+            'Deprecated runtime': { icon: '⬆️', label: 'Upgrade', color: '#ff9100' },
+            'EOL RDS': { icon: '⬆️', label: 'Upgrade Engine', color: '#ff9100' },
+        };
+
+        function getAction(title) {
+            for (const [prefix, cfg] of Object.entries(actionConfig)) {
+                if (title.startsWith(prefix) || title.includes(prefix)) return cfg;
+            }
+            return { icon: '🔧', label: 'Fix', color: '#90a4ae' };
+        }
+
+        let html = '<div class="remediation-cards">';
+        for (let i = 0; i < findings.length; i++) {
+            const f = findings[i];
+            const color = sevColors[f.severity] || '#90a4ae';
+            const act = getAction(f.title);
+            const impact = f.monthly_impact ? `$${f.monthly_impact.toLocaleString(undefined,{minimumFractionDigits:2})}/mo` : '';
+            html += `<div class="remediation-card" style="border-left:3px solid ${color}">
+                <div class="rem-icon">${act.icon}</div>
+                <div class="rem-info">
+                    <span class="rem-title">${this.escapeHtml(f.title)}</span>
+                    <span class="rem-meta">${f.region}${impact ? ' · ' + impact : ''}</span>
+                </div>
+                <button class="rem-btn" style="background:${act.color}22;color:${act.color};border-color:${act.color}44" data-idx="${i}" onclick="Chat._executeRemediation(${i})">${act.label}</button>
+            </div>`;
+        }
+        html += '</div>';
+
+        // Follow-up prompt — context-aware based on skill type
+        const skills = [...new Set(findings.map(f => f.skill))];
+        const totalImpact = findings.reduce((s, f) => s + (f.monthly_impact || 0), 0);
+        const impactStr = totalImpact > 0 ? ` (saving ~$${totalImpact.toLocaleString(undefined,{minimumFractionDigits:2})}/mo)` : '';
+
+        const promptMap = {
+            'zombie-hunter': `Would you like to clean up these unused resources? Click individual buttons or type <strong>"delete all"</strong> to remove everything${impactStr}.`,
+            'security-posture': `Would you like to harden your security posture? Click individual buttons to restrict access, deactivate old keys, or block public exposure.`,
+            'resiliency-gaps': `Would you like to improve resilience? Click individual buttons to enable Multi-AZ, backups, or flow logs.`,
+            'tag-enforcer': `Would you like to enforce tagging? Click individual buttons to apply mandatory tags to untagged resources.`,
+            'capacity-planner': `Would you like to optimize capacity? Click individual buttons to cancel underutilized reservations${impactStr}.`,
+            'lifecycle-tracker': `Would you like to upgrade deprecated resources? Click individual buttons to update runtimes and engines.`,
+            'costopt-intelligence': `Would you like to optimize costs? Click individual buttons to right-size or migrate resources${impactStr}.`,
+        };
+
+        let prompt = '';
+        if (skills.length === 1 && promptMap[skills[0]]) {
+            prompt = promptMap[skills[0]];
+        } else {
+            prompt = `Would you like to remediate these findings? Click individual buttons above, or type <strong>"fix all"</strong> to apply all fixes${impactStr}.`;
+        }
+
+        html += `<div class="rem-followup"><span>${prompt}</span></div>`;
+
+        contentDiv.innerHTML = html;
+        div.appendChild(contentDiv);
+        this.messagesEl.appendChild(div);
+        this.scrollToBottom();
+
+        // Store findings for remediation execution
+        this._pendingRemediations = findings;
+    },
+
+    async _executeRemediation(idx) {
+        const finding = this._pendingRemediations && this._pendingRemediations[idx];
+        if (!finding) return;
+
+        const btn = document.querySelector(`.rem-btn[data-idx="${idx}"]`);
+        if (!btn || btn.disabled) return;
+
+        // Confirm before executing
+        const ok = confirm(`Are you sure you want to remediate?\n\n${finding.title}\nResource: ${finding.resource_id}\nRegion: ${finding.region}\n\nThis action will modify your AWS resources.`);
+        if (!ok) return;
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Working...';
+        btn.style.opacity = '0.6';
+
+        try {
+            const result = await API.remediate(finding);
+            if (result.success) {
+                btn.textContent = '✅ Done';
+                btn.style.background = 'rgba(0,230,118,0.2)';
+                btn.style.color = '#00e676';
+                this.addMessage('assistant', `✅ Remediation successful: **${result.action}** on \`${finding.resource_id}\` — ${result.message}`);
+            } else {
+                btn.textContent = '❌ Failed';
+                btn.style.background = 'rgba(255,23,68,0.2)';
+                btn.style.color = '#ff1744';
+                this.addMessage('assistant', `❌ Remediation failed: ${result.message}`);
+            }
+        } catch (err) {
+            btn.textContent = '❌ Error';
+            btn.style.background = 'rgba(255,23,68,0.2)';
+            this.addMessage('assistant', `⚠️ Remediation error: ${err.message}`);
+        }
     },
 
     copyCode(btn) {
