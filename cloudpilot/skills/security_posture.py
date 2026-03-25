@@ -156,27 +156,51 @@ class SecurityPostureSkill(BaseSkill):
         regional = [c for c in selected if c.is_regional]
         global_checks = [c for c in selected if not c.is_regional]
 
-        # Execute global checks sequentially
-        for cdef in global_checks:
+        # Pre-cache S3 bucket list so all S3 checks share one API call
+        self._s3_bucket_cache = None
+        s3_check_names = {"s3_public_acl", "s3_public_policy", "s3_no_encryption", "cross_account_s3_policy"}
+        if any(c.name in s3_check_names for c in global_checks):
             try:
-                fn = getattr(self, cdef.fn_name)
-                results = fn(profile=profile, account_id=acct)
-                for f in results:
-                    findings.append(self._enrich_finding(f, cdef))
+                s3 = get_client("s3", "us-east-1", profile)
+                self._s3_bucket_cache = s3.list_buckets().get("Buckets", [])[:100]
             except Exception as e:
-                errors.append(f"{cdef.name}: {e}")
+                errors.append(f"s3_list_buckets: {e}")
+                self._s3_bucket_cache = []
 
-        # Execute regional checks in parallel
-        for cdef in regional:
-            try:
-                fn = getattr(self, cdef.fn_name)
-                def _regional_runner(region, _fn=fn, _profile=profile):
-                    return _fn(region=region, profile=_profile)
-                results = parallel_regions(_regional_runner, regions)
-                for f in results:
-                    findings.append(self._enrich_finding(f, cdef))
-            except Exception as e:
-                errors.append(f"{cdef.name}: {e}")
+        # Execute global checks in PARALLEL (ThreadPoolExecutor)
+        def _run_global(cdef):
+            fn = getattr(self, cdef.fn_name)
+            return cdef, fn(profile=profile, account_id=acct)
+
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            futures = {pool.submit(_run_global, c): c for c in global_checks}
+            for fut in as_completed(futures):
+                cdef = futures[fut]
+                try:
+                    _, results = fut.result()
+                    for f in results:
+                        findings.append(self._enrich_finding(f, cdef))
+                except Exception as e:
+                    errors.append(f"{cdef.name}: {e}")
+
+        # Execute ALL regional checks per region in a single parallel pass
+        def _run_region(region):
+            region_findings = []
+            for cdef in regional:
+                try:
+                    fn = getattr(self, cdef.fn_name)
+                    results = fn(region=region, profile=profile)
+                    for f in results:
+                        region_findings.append(self._enrich_finding(f, cdef))
+                except Exception as e:
+                    errors.append(f"{cdef.name}@{region}: {e}")
+            return region_findings
+
+        region_results = parallel_regions(_run_region, regions)
+        findings.extend(region_results)
+
+        # Clean up cache
+        self._s3_bucket_cache = None
 
         for f in findings:
             f.account_id = acct
@@ -210,6 +234,7 @@ class SecurityPostureSkill(BaseSkill):
         finding.metadata["compliance_tags"] = cdef.compliance_tags
         finding.metadata.setdefault("internet_exposed", False)
         finding.metadata["category"] = cdef.category
+        finding.metadata["_check_name"] = cdef.name
         finding.skill = "security-posture"
         return finding
 
@@ -229,7 +254,10 @@ class SecurityPostureSkill(BaseSkill):
         sev_counts = Counter(f.severity.value for f in findings)
         cat_counts = Counter(f.metadata.get("category", "Unknown") for f in findings)
         total = len(checks_run)
-        score = round(((total - len(findings)) / max(total, 1)) * 100, 1)
+        # Score = % of checks that produced zero findings
+        checks_with_findings = set(f.metadata.get("_check_name", "") for f in findings) & set(checks_run)
+        passed = total - len(checks_with_findings)
+        score = round((passed / max(total, 1)) * 100, 1)
         top5 = sorted(findings, key=lambda f: f.metadata.get("risk_score", 0), reverse=True)[:5]
         return {
             "total_checks_run": total,
@@ -247,13 +275,23 @@ class SecurityPostureSkill(BaseSkill):
     # PUBLIC EXPOSURE CHECKS (1-10)
     # ══════════════════════════════════════════════════════════════════════
 
+    def _get_s3_buckets(self, profile):
+        """Return cached bucket list or fetch fresh."""
+        if self._s3_bucket_cache is not None:
+            return self._s3_bucket_cache
+        try:
+            s3 = get_client("s3", "us-east-1", profile)
+            return s3.list_buckets().get("Buckets", [])[:100]
+        except Exception:
+            return []
+
     # 1. S3 Public ACL ─────────────────────────────────────────────────────
     def _check_s3_public_acl(self, profile=None, **kw):
         findings = []
         try:
             s3 = get_client("s3", "us-east-1", profile)
-            buckets = s3.list_buckets().get("Buckets", [])
-            for bucket in buckets[:100]:
+            buckets = self._get_s3_buckets(profile)
+            for bucket in buckets:
                 name = bucket["Name"]
                 try:
                     acl = s3.get_bucket_acl(Bucket=name)
@@ -282,8 +320,8 @@ class SecurityPostureSkill(BaseSkill):
         findings = []
         try:
             s3 = get_client("s3", "us-east-1", profile)
-            buckets = s3.list_buckets().get("Buckets", [])
-            for bucket in buckets[:100]:
+            buckets = self._get_s3_buckets(profile)
+            for bucket in buckets:
                 name = bucket["Name"]
                 try:
                     policy_str = s3.get_bucket_policy(Bucket=name)["Policy"]
@@ -659,8 +697,8 @@ class SecurityPostureSkill(BaseSkill):
         findings = []
         try:
             s3 = get_client("s3", "us-east-1", profile)
-            buckets = s3.list_buckets().get("Buckets", [])
-            for bucket in buckets[:100]:
+            buckets = self._get_s3_buckets(profile)
+            for bucket in buckets:
                 name = bucket["Name"]
                 try:
                     s3.get_bucket_encryption(Bucket=name)
