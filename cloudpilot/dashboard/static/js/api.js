@@ -6,7 +6,7 @@ const API = {
 
     async _fetch(path, options = {}) {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 300000); // 5 min timeout
+        const timeout = setTimeout(() => controller.abort(), 600000); // 10 min timeout
         try {
             const resp = await fetch(`${this.baseUrl}${path}`, {
                 headers: { 'Content-Type': 'application/json' },
