@@ -158,15 +158,46 @@ cloudpilot skills
 
 ## Architecture
 
+Built on **Strands Agents SDK** with **Bedrock AgentCore** for memory and runtime.
+
 ```
-Browser → FastAPI Server → CloudPilot Agent (Bedrock Converse tool_use loop)
-                              ├── 12 Scanning Skills (parallel, multi-region)
-                              ├── Architecture Mapper (resource discovery + Mermaid)
-                              ├── IaC Generator (CDK/CFN/Terraform via Bedrock)
-                              ├── Remediation Engine (18 actions)
-                              ├── AgentCore Memory (session + cross-session)
-                              └── MCP Server (stdio transport)
+                    ┌─────────────────────────────────────────┐
+                    │           Entry Points                   │
+                    │  CLI  │  Dashboard  │  MCP Server        │
+                    │       │  (FastAPI)  │  (stdio/SSE)       │
+                    └───────┴──────┬──────┴────────────────────┘
+                                   │
+                    ┌──────────────▼──────────────┐
+                    │     Strands Agent            │
+                    │  (BedrockModel + @tool)      │
+                    │  System Prompt: AWS SA       │
+                    │  Memory: AgentCore + Local   │
+                    └──────────────┬──────────────┘
+                                   │
+              ┌────────────────────┼────────────────────┐
+              │                    │                     │
+    ┌─────────▼────────┐ ┌────────▼────────┐ ┌─────────▼────────┐
+    │  10 @tool funcs   │ │  12 Skills      │ │  AWS Knowledge   │
+    │  run_skill        │ │  cost-radar     │ │  aws_docs_search │
+    │  discover_arch    │ │  zombie-hunter  │ │  aws_blog_search │
+    │  generate_diagram │ │  security-pos   │ │  (What's New RSS) │
+    │  generate_iac     │ │  + 9 more       │ │                  │
+    │  remediate        │ │                 │ │                  │
+    └──────────────────┘ └────────┬────────┘ └──────────────────┘
+                                  │
+                    ┌─────────────▼──────────────┐
+                    │  AWS APIs (boto3)           │
+                    │  Parallel ThreadPool(20)    │
+                    │  Smart region selection     │
+                    │  (top 5 by CE spend)        │
+                    └────────────────────────────┘
 ```
+
+**Deployment options:**
+- `pip install cloudpilot && cloudpilot --profile my-profile dashboard`
+- `docker-compose up` (mounts ~/.aws read-only)
+- `cloudpilot mcp --transport sse` (remote MCP clients)
+- `agentcore deploy --entry-point agent.py` (AgentCore Runtime)
 
 ## Roadmap
 
