@@ -161,82 +161,36 @@ cloudpilot skills
 Built on **Strands Agents SDK** with **Bedrock AgentCore** for memory and runtime.
 
 ```mermaid
-graph TB
-    subgraph Entry["🚀 Entry Points"]
-        CLI["CLI<br/>cloudpilot --profile"]
-        DASH["Dashboard<br/>FastAPI + JS"]
-        MCP["MCP Server<br/>stdio / SSE"]
-        DOCKER["Docker<br/>Container"]
-        AGENTCORE_RT["AgentCore<br/>Runtime"]
+graph LR
+    subgraph Interfaces
+        CLI[CLI]
+        DASH[Dashboard]
+        MCP[MCP Server]
     end
 
-    subgraph Security["🛡️ Security Layer"]
-        AUTH["API Key Auth"]
-        RATE["Rate Limiter<br/>60rpm / 15 burst"]
-        GUARD["Guardrails<br/>Injection + Topic + Sanitize"]
-        AUDIT["Audit Logger"]
+    subgraph Core
+        GUARD[Guardrails & Security]
+        AGENT[Strands Agent<br/>Bedrock Claude]
+        MEM[AgentCore Memory]
     end
 
-    subgraph Agent["🧠 Strands Agent"]
-        STRANDS["Strands Agent<br/>BedrockModel + @tool"]
-        MEMORY["Memory Hook<br/>AgentCore + Local JSON"]
-        PROMPT["System Prompt<br/>AWS Solutions Architect"]
+    subgraph Capabilities
+        TOOLS[10 @tool Functions]
+        SKILLS[12 Scanning Skills]
+        SEARCH[AWS Docs & Blog Search]
     end
 
-    subgraph Tools["🔧 10 Agent Tools"]
-        SCAN["run_skill<br/>run_all_skills"]
-        DISCOVER["discover_architecture<br/>generate_diagram"]
-        IAC["generate_iac<br/>CDK / CFN / Terraform"]
-        REMEDIATE["remediate_finding<br/>18 one-click actions"]
-        SEARCH["aws_docs_search<br/>aws_blog_search"]
-        SUMMARY["get_findings_summary<br/>list_skills"]
-    end
+    AWS[AWS APIs<br/>boto3 parallel]
 
-    subgraph Skills["📊 12 Scanning Skills"]
-        COST["📡 cost-radar"]
-        ZOMBIE["🧟 zombie-hunter"]
-        SEC["🛡️ security-posture"]
-        CAP["📊 capacity-planner"]
-        EVENT["🔍 event-analysis"]
-        RESIL["🏗️ resiliency-gaps"]
-        TAG["🏷️ tag-enforcer"]
-        LIFE["⏳ lifecycle-tracker"]
-        HEALTH["🏥 health-monitor"]
-        QUOTA["📏 quota-guardian"]
-        COSTOPT["💡 costopt-intel"]
-        ARCH["🗺️ arch-diagram"]
-    end
-
-    subgraph AWS["☁️ AWS APIs"]
-        BOTO["boto3<br/>Parallel ThreadPool 20"]
-        BEDROCK["Bedrock Runtime<br/>Claude Sonnet"]
-        CE["Cost Explorer"]
-        AGENTCORE_MEM["AgentCore<br/>MemoryClient"]
-    end
-
-    CLI --> STRANDS
-    DASH --> AUTH --> RATE --> GUARD --> STRANDS
-    MCP --> STRANDS
-    DOCKER --> DASH
-    AGENTCORE_RT --> STRANDS
-
-    STRANDS --> MEMORY
-    STRANDS --> SCAN
-    STRANDS --> DISCOVER
-    STRANDS --> IAC
-    STRANDS --> REMEDIATE
-    STRANDS --> SEARCH
-    STRANDS --> SUMMARY
-
-    SCAN --> Skills
-    Skills --> BOTO
-    DISCOVER --> BOTO
-    IAC --> BEDROCK
-    STRANDS --> BEDROCK
-    COST --> CE
-    MEMORY --> AGENTCORE_MEM
-    GUARD --> AUDIT
-    REMEDIATE --> AUDIT
+    CLI --> AGENT
+    DASH --> GUARD --> AGENT
+    MCP --> AGENT
+    AGENT --> MEM
+    AGENT --> TOOLS
+    TOOLS --> SKILLS
+    TOOLS --> SEARCH
+    SKILLS --> AWS
+    AGENT -->|Bedrock| AWS
 ```
 
 **Deployment options:**
@@ -244,33 +198,6 @@ graph TB
 - `docker-compose up` (mounts ~/.aws read-only)
 - `cloudpilot mcp --transport sse` (remote MCP clients)
 - `agentcore deploy --entry-point agent.py` (AgentCore Runtime)
-
-### Request Flow
-
-```mermaid
-sequenceDiagram
-    participant U as 👤 User
-    participant D as Dashboard / CLI
-    participant G as Guardrails
-    participant A as Strands Agent
-    participant B as Bedrock (Claude)
-    participant T as @tool Functions
-    participant AWS as AWS APIs
-
-    U->>D: "Find security issues"
-    D->>G: Validate input
-    G->>A: Clean message
-    A->>B: converse(system + tools)
-    B-->>A: tool_use: run_skill("security-posture")
-    A->>T: run_skill()
-    T->>AWS: boto3 calls (parallel, 5 regions)
-    AWS-->>T: Findings
-    T-->>A: SkillResult JSON
-    A->>B: converse(tool_result)
-    B-->>A: Natural language summary
-    A-->>D: Response + findings
-    D-->>U: Chat bubble + remediation cards
-```
 
 ## Roadmap
 
