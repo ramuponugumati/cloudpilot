@@ -172,13 +172,98 @@ def execute_tool(
         return stub.to_dict()
 
     elif tool_name == "trace_network_path":
-        from cloudpilot.core import StubToolResponse
-        stub = StubToolResponse(
-            tool_name="trace_network_path",
-            description="Network path tracing between AWS resources. Analyzes security groups, NACLs, route tables, and VPC peering to diagnose connectivity.",
-            planned_capabilities=["End-to-end path tracing", "Security group chain analysis", "NACL rule evaluation", "Cross-VPC connectivity diagnosis"],
+        regions = tool_input.get("regions") or get_regions(profile=profile)
+        from cloudpilot.skills.network_path_tracer import NetworkPathTracer
+        skill = NetworkPathTracer()
+        start = time.time()
+        result = skill.scan(
+            regions, profile,
+            source=tool_input.get("source"),
+            destination=tool_input.get("destination"),
         )
-        return stub.to_dict()
+        duration = time.time() - start
+        findings = [f.to_dict() for f in result.findings]
+        if findings_store is not None:
+            findings_store.extend(findings)
+        if skills_run is not None and skill.name not in skills_run:
+            skills_run.append(skill.name)
+        return {
+            "skill": skill.name,
+            "findings_count": len(findings),
+            "findings": findings[:20],
+            "duration_seconds": round(duration, 1),
+            "total_impact": round(result.total_impact, 2),
+            "critical_count": result.critical_count,
+        }
+
+    elif tool_name == "analyze_security_groups":
+        regions = tool_input.get("regions") or get_regions(profile=profile)
+        from cloudpilot.skills.sg_chain_analyzer import SGChainAnalyzer
+        skill = SGChainAnalyzer()
+        start = time.time()
+        result = skill.scan(regions, profile)
+        duration = time.time() - start
+        findings = [f.to_dict() for f in result.findings]
+        if findings_store is not None:
+            findings_store.extend(findings)
+        if skills_run is not None and skill.name not in skills_run:
+            skills_run.append(skill.name)
+        return {
+            "skill": skill.name,
+            "findings_count": len(findings),
+            "findings": findings[:20],
+            "duration_seconds": round(duration, 1),
+            "total_impact": round(result.total_impact, 2),
+            "critical_count": result.critical_count,
+        }
+
+    elif tool_name == "diagnose_connectivity":
+        regions = tool_input.get("regions") or get_regions(profile=profile)
+        from cloudpilot.skills.connectivity_diagnoser import ConnectivityDiagnoser
+        skill = ConnectivityDiagnoser()
+        start = time.time()
+        result = skill.scan(
+            regions, profile,
+            source=tool_input.get("source"),
+            destination=tool_input.get("destination"),
+            protocol=tool_input.get("protocol", "tcp"),
+            port=tool_input.get("port", 443),
+        )
+        duration = time.time() - start
+        findings = [f.to_dict() for f in result.findings]
+        if findings_store is not None:
+            findings_store.extend(findings)
+        if skills_run is not None and skill.name not in skills_run:
+            skills_run.append(skill.name)
+        return {
+            "skill": skill.name,
+            "findings_count": len(findings),
+            "findings": findings[:20],
+            "duration_seconds": round(duration, 1),
+            "total_impact": round(result.total_impact, 2),
+            "critical_count": result.critical_count,
+        }
+
+    elif tool_name == "generate_network_topology":
+        regions = tool_input.get("regions") or get_regions(profile=profile)
+        from cloudpilot.skills.network_topology import NetworkTopologyVisualizer
+        skill = NetworkTopologyVisualizer()
+        start = time.time()
+        result = skill.scan(regions, profile)
+        duration = time.time() - start
+        findings = [f.to_dict() for f in result.findings]
+        if findings_store is not None:
+            findings_store.extend(findings)
+        if skills_run is not None and skill.name not in skills_run:
+            skills_run.append(skill.name)
+        return {
+            "skill": skill.name,
+            "findings_count": len(findings),
+            "findings": findings[:20],
+            "duration_seconds": round(duration, 1),
+            "total_impact": round(result.total_impact, 2),
+            "critical_count": result.critical_count,
+        }
 
     elif tool_name == "aws_docs_search":
         from cloudpilot.agent.web_search import search_aws_docs

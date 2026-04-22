@@ -254,10 +254,12 @@ class SecurityPostureSkill(BaseSkill):
         sev_counts = Counter(f.severity.value for f in findings)
         cat_counts = Counter(f.metadata.get("category", "Unknown") for f in findings)
         total = len(checks_run)
+
         # Score = % of checks that produced zero findings
         checks_with_findings = set(f.metadata.get("_check_name", "") for f in findings) & set(checks_run)
         passed = total - len(checks_with_findings)
         score = round((passed / max(total, 1)) * 100, 1)
+
         top5 = sorted(findings, key=lambda f: f.metadata.get("risk_score", 0), reverse=True)[:5]
         return {
             "total_checks_run": total,

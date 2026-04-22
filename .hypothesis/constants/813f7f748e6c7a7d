@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/tag_enforcer.py
+# hypothesis_version: 6.151.9
+
+[', ', '0.1.0', 'Add mandatory tags: ', 'Buckets', 'DBInstanceArn', 'DBInstanceIdentifier', 'DBInstances', 'Environment', 'FunctionArn', 'FunctionName', 'Functions', 'InstanceId', 'Instances', 'Key', 'Name', 'Owner', 'Reservations', 'TagList', 'TagSet', 'Tags', 'Team', 'Value', 'Values', 'arn', 'describe_instances', 'ec2', 'global', 'instance-state-name', 'lambda', 'missing_tags', 'rds', 'resource_type', 'running', 's3', 'tag-enforcer', 'us-east-1']

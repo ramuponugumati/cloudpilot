@@ -5,7 +5,7 @@ TOOL_DEFINITIONS = [
     {
         "toolSpec": {
             "name": "run_skill",
-            "description": "Run a CloudPilot scanning skill against the AWS account. Available skills: cost-radar, zombie-hunter, security-posture, capacity-planner, event-analysis, resiliency-gaps, tag-enforcer, lifecycle-tracker, health-monitor, quota-guardian, costopt-intelligence, arch-diagram.",
+            "description": "Run a CloudPilot scanning skill against the AWS account. Available skills: cost-radar, zombie-hunter, security-posture, capacity-planner, event-analysis, resiliency-gaps, tag-enforcer, lifecycle-tracker, health-monitor, quota-guardian, costopt-intelligence, arch-diagram, network-path-tracer, sg-chain-analyzer, connectivity-diagnoser, network-topology.",
             "inputSchema": {
                 "json": {
                     "type": "object",
@@ -204,13 +204,68 @@ TOOL_DEFINITIONS = [
     {
         "toolSpec": {
             "name": "trace_network_path",
-            "description": "Trace network connectivity path between two AWS resources. COMING SOON in Phase 2 — will support path tracing, security group chain analysis, and connectivity diagnosis.",
+            "description": "Trace network connectivity path between two AWS resources. Analyzes route tables, VPC peering, NAT gateways, and internet gateways to determine reachability.",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "source": {"type": "string", "description": "Source resource ID (e.g. i-abc123, db-xyz789, ELB ARN)"},
+                        "destination": {"type": "string", "description": "Destination resource ID (e.g. i-abc123, db-xyz789, ELB ARN)"},
+                    },
+                    "required": ["source", "destination"],
+                }
+            },
+        }
+    },
+    {
+        "toolSpec": {
+            "name": "analyze_security_groups",
+            "description": "Analyze security group rules across regions for overly permissive configurations and trace SG-to-SG reference chains.",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "regions": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "AWS regions to scan. Omit for all regions.",
+                        },
+                    },
+                }
+            },
+        }
+    },
+    {
+        "toolSpec": {
+            "name": "diagnose_connectivity",
+            "description": "Diagnose why one AWS resource cannot reach another by checking security groups, NACLs, route tables, VPC peering, NAT gateways, and internet gateways.",
             "inputSchema": {
                 "json": {
                     "type": "object",
                     "properties": {
                         "source": {"type": "string", "description": "Source resource ID"},
                         "destination": {"type": "string", "description": "Destination resource ID"},
+                        "protocol": {"type": "string", "description": "Protocol to check (default: tcp)", "default": "tcp"},
+                        "port": {"type": "integer", "description": "Port number to check (default: 443)", "default": 443},
+                    },
+                    "required": ["source", "destination"],
+                }
+            },
+        }
+    },
+    {
+        "toolSpec": {
+            "name": "generate_network_topology",
+            "description": "Generate a Mermaid network topology diagram showing VPC layout, subnets, route tables, NAT/IGW, and peering connections.",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "regions": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "AWS regions to scan. Omit for all regions.",
+                        },
                     },
                 }
             },

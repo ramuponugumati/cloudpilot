@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/connectivity_diagnoser.py
+# hypothesis_version: 6.151.9
+
+[443, 32767, ',', '-', '-1', '0.0.0.0/0', '0.1.0', '1', '17', '6', 'No action required', 'Verify resource ID', 'accepter_vpc_id', 'action', 'active', 'all', 'allow', 'cidr', 'component_id', 'destination_cidr', 'destination_vpc', 'from_port', 'group_id', 'icmp', 'igws', 'inbound', 'inbound_rules', 'internet-gateway', 'nacl_id', 'nacls', 'nat-gateway', 'nat_gws', 'outbound', 'outbound_rules', 'peering_id', 'port', 'port_range', 'private_ip', 'protocol', 'recommended_action', 'requester_vpc_id', 'resource_id', 'route_table_id', 'route_tables', 'routes', 'rule_number', 'security_group', 'security_group_ids', 'security_groups', 'source', 'source_type', 'source_vpc', 'status', 'subnet_associations', 'subnet_id', 'target_type', 'tcp', 'to_port', 'udp', 'us-east-1', 'vpc_id', 'vpc_peerings']

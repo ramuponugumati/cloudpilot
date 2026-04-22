@@ -33,6 +33,8 @@ SKILL_NAMES = [
     "capacity-planner", "event-analysis", "resiliency-gaps",
     "tag-enforcer", "lifecycle-tracker", "health-monitor",
     "quota-guardian", "costopt-intelligence", "arch-diagram",
+    "network-path-tracer", "sg-chain-analyzer",
+    "connectivity-diagnoser", "network-topology",
 ]
 
 # Severity values
@@ -106,3 +108,192 @@ injection_strategy = st.sampled_from([
 # Strategy: AWS access key ID patterns for sanitization testing
 # ---------------------------------------------------------------------------
 aws_key_strategy = st.from_regex(r"AKIA[A-Z0-9]{16}", fullmatch=True)
+
+
+# ---------------------------------------------------------------------------
+# Network Intelligence: Constants
+# ---------------------------------------------------------------------------
+PROTOCOLS = ["tcp", "udp", "-1"]
+NACL_PROTOCOLS = ["tcp", "udp", "-1", "6", "17"]
+PORT_RANGE_STRINGS = ["80", "443", "22", "0-65535"]
+ROUTE_TARGET_TYPES = [
+    "local", "nat-gateway", "internet-gateway", "vpc-peering", "transit-gateway",
+]
+RESOURCE_TYPE_NAMES = ["ec2", "rds", "lambda", "ecs", "elbv2"]
+
+
+def _aws_id(prefix: str) -> st.SearchStrategy[str]:
+    """Generate an AWS-style ID like 'vpc-a1b2c3d4'."""
+    return st.builds(
+        lambda suffix: f"{prefix}{suffix}",
+        st.text(alphabet="abcdef0123456789", min_size=8, max_size=12),
+    )
+
+
+def _private_ipv4() -> st.SearchStrategy[str]:
+    """Generate a 10.x.x.x private IPv4 address."""
+    return st.builds(
+        lambda a, b, c: f"10.{a}.{b}.{c}",
+        st.integers(min_value=0, max_value=255),
+        st.integers(min_value=0, max_value=255),
+        st.integers(min_value=1, max_value=254),
+    )
+
+
+def _cidr_block() -> st.SearchStrategy[str]:
+    """Generate a CIDR block like '10.x.x.0/y'."""
+    return st.one_of(
+        st.just("0.0.0.0/0"),
+        st.builds(
+            lambda a, b, mask: f"10.{a}.{b}.0/{mask}",
+            st.integers(min_value=0, max_value=255),
+            st.integers(min_value=0, max_value=255),
+            st.sampled_from([16, 20, 24, 28]),
+        ),
+        st.builds(
+            lambda a, b, mask: f"172.16.{a}.{b}/{mask}",
+            st.integers(min_value=0, max_value=255),
+            st.integers(min_value=0, max_value=255),
+            st.sampled_from([12, 16, 20, 24]),
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Strategy: Security Group rule
+# ---------------------------------------------------------------------------
+sg_rule_strategy = st.one_of(
+    # CIDR-based source
+    st.fixed_dictionaries({
+        "protocol": st.sampled_from(PROTOCOLS),
+        "from_port": st.integers(min_value=0, max_value=65535),
+        "to_port": st.integers(min_value=0, max_value=65535),
+        "source": _cidr_block(),
+        "source_type": st.just("cidr"),
+    }),
+    # SG-reference source
+    st.fixed_dictionaries({
+        "protocol": st.sampled_from(PROTOCOLS),
+        "from_port": st.integers(min_value=0, max_value=65535),
+        "to_port": st.integers(min_value=0, max_value=65535),
+        "source": _aws_id("sg-"),
+        "source_type": st.just("sg"),
+    }),
+)
+
+
+# ---------------------------------------------------------------------------
+# Strategy: NACL rule
+# ---------------------------------------------------------------------------
+nacl_rule_strategy = st.fixed_dictionaries({
+    "rule_number": st.integers(min_value=1, max_value=32766),
+    "protocol": st.sampled_from(NACL_PROTOCOLS),
+    "port_range": st.sampled_from(PORT_RANGE_STRINGS),
+    "cidr": _cidr_block(),
+    "action": st.sampled_from(["allow", "deny"]),
+})
+
+
+# ---------------------------------------------------------------------------
+# Strategy: Route table entry
+# ---------------------------------------------------------------------------
+def _route_target_id(target_type: str) -> str:
+    """Return a realistic target ID for a given route target type."""
+    prefix_map = {
+        "local": "local",
+        "nat-gateway": "nat-",
+        "internet-gateway": "igw-",
+        "vpc-peering": "pcx-",
+        "transit-gateway": "tgw-",
+    }
+    prefix = prefix_map.get(target_type, "unknown-")
+    if prefix == "local":
+        return "local"
+    return prefix + "0a1b2c3d4e"
+
+
+route_strategy = st.builds(
+    lambda dest, ttype: {
+        "destination_cidr": dest,
+        "target_type": ttype,
+        "target_id": _route_target_id(ttype),
+    },
+    _cidr_block(),
+    st.sampled_from(ROUTE_TARGET_TYPES),
+)
+
+
+# ---------------------------------------------------------------------------
+# Strategy: Network topology (VPCs, subnets, route tables, peerings, IGWs, NAT GWs)
+# ---------------------------------------------------------------------------
+topology_strategy = st.fixed_dictionaries({
+    "vpcs": st.lists(
+        st.fixed_dictionaries({
+            "vpc_id": _aws_id("vpc-"),
+            "cidr_block": _cidr_block(),
+        }),
+        min_size=1,
+        max_size=4,
+    ),
+    "subnets": st.lists(
+        st.fixed_dictionaries({
+            "subnet_id": _aws_id("subnet-"),
+            "vpc_id": _aws_id("vpc-"),
+            "availability_zone": st.sampled_from(["us-east-1a", "us-east-1b", "us-west-2a"]),
+            "cidr_block": _cidr_block(),
+        }),
+        min_size=1,
+        max_size=10,
+    ),
+    "route_tables": st.lists(
+        st.fixed_dictionaries({
+            "route_table_id": _aws_id("rtb-"),
+            "vpc_id": _aws_id("vpc-"),
+            "subnet_associations": st.lists(_aws_id("subnet-"), max_size=3),
+            "routes": st.lists(route_strategy, min_size=1, max_size=5),
+        }),
+        min_size=1,
+        max_size=5,
+    ),
+    "peerings": st.lists(
+        st.fixed_dictionaries({
+            "peering_id": _aws_id("pcx-"),
+            "requester_vpc_id": _aws_id("vpc-"),
+            "accepter_vpc_id": _aws_id("vpc-"),
+            "status": st.sampled_from(["active", "pending-acceptance", "deleted"]),
+        }),
+        max_size=3,
+    ),
+    "igws": st.lists(
+        st.fixed_dictionaries({
+            "igw_id": _aws_id("igw-"),
+            "vpc_id": _aws_id("vpc-"),
+        }),
+        max_size=3,
+    ),
+    "nat_gws": st.lists(
+        st.fixed_dictionaries({
+            "nat_gw_id": _aws_id("nat-"),
+            "vpc_id": _aws_id("vpc-"),
+            "subnet_id": _aws_id("subnet-"),
+            "state": st.sampled_from(["available", "pending", "deleting"]),
+        }),
+        max_size=3,
+    ),
+})
+
+
+# ---------------------------------------------------------------------------
+# Strategy: Resource network info
+# ---------------------------------------------------------------------------
+resource_network_info_strategy = st.fixed_dictionaries({
+    "resource_id": st.one_of(
+        _aws_id("i-"),
+        _aws_id("db-"),
+    ),
+    "resource_type": st.sampled_from(RESOURCE_TYPE_NAMES),
+    "vpc_id": _aws_id("vpc-"),
+    "subnet_id": _aws_id("subnet-"),
+    "security_group_ids": st.lists(_aws_id("sg-"), min_size=1, max_size=3),
+    "private_ip": _private_ipv4(),
+})

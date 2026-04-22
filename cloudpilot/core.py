@@ -222,3 +222,44 @@ class StubToolResponse:
     def to_dict(self):
         return asdict(self)
 
+
+
+@dataclass
+class PathHop:
+    """A single hop in a network path trace."""
+    component_type: str   # "subnet" | "route_table" | "nat_gateway" | "igw" | "vpc_peering" | "vpc"
+    component_id: str     # AWS resource ID
+    component_name: str   # Name tag or descriptive label
+    allowed: bool         # True if traffic passes this hop
+    reason: str = ""      # Why blocked, or route matched
+    metadata: dict = field(default_factory=dict)
+
+    def to_dict(self):
+        return asdict(self)
+
+
+@dataclass
+class PathResult:
+    """Ordered sequence of hops from source to destination."""
+    source_id: str
+    destination_id: str
+    hops: list[PathHop] = field(default_factory=list)
+    reachable: bool = False
+    blocked_at: str = ""  # component_id of first blocking hop
+
+    def to_dict(self):
+        return asdict(self)
+
+
+@dataclass
+class SGChain:
+    """Chain of security group rules evaluated for a traffic flow."""
+    source_sg_id: str
+    destination_sg_id: str
+    protocol: str
+    port_range: str
+    chain: list[dict] = field(default_factory=list)  # [{sg_id, rule, verdict: "allow"|"deny"}]
+    verdict: str = "deny"  # overall: "allow" | "deny"
+
+    def to_dict(self):
+        return asdict(self)

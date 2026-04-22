@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/quota_guardian.py
+# hypothesis_version: 6.151.9
+
+[100, 3600, '0.1.0', 'AWS/Usage', 'Addresses', 'Buckets', 'Clusters per account', 'DB instances', 'DBInstances', 'Datapoints', 'EC2-VPC Elastic IPs', 'Elastic IPs', 'L-0263D0A3', 'L-0485CB21', 'L-1216C47A', 'L-21C621EB', 'L-53DA6B97', 'L-7A658000', 'L-7B6409FD', 'L-A4707A72', 'L-B99A9384', 'L-DC2B2D3D', 'L-F678F1CE', 'L-FE5A380F', 'Maximum', 'Name', 'Quota', 'Resource', 'ResourceCount', 'Service', 'Stack count', 'Type', 'VPCs', 'VPCs per Region', 'Value', 'Vpcs', 'cloudformation', 'cloudwatch', 'ebs', 'ec2', 'ecs', 'elasticloadbalancing', 'lambda', 'limit', 'quota-guardian', 'quota_code', 'quota_name', 'rds', 's3', 'service', 'service-quotas', 'threshold', 'usage_pct', 'vpc']

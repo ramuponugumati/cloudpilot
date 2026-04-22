@@ -15,4 +15,8 @@ from cloudpilot.skills import (
     quota_guardian,
     costopt_intelligence,
     arch_mapper,
+    network_path_tracer,
+    sg_chain_analyzer,
+    connectivity_diagnoser,
+    network_topology,
 )

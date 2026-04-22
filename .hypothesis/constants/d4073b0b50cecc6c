@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/sg_chain_analyzer.py
+# hypothesis_version: 6.151.9
+
+[443, 3389, '-1', '0.0.0.0/0', '0.1.0', '::/0', 'associated_resources', 'from_port', 'group_id', 'inbound', 'inbound_rules', 'outbound', 'outbound_rules', 'protocol', 'region', 'rules', 'security_group', 'security_group_id', 'sg-chain-analyzer', 'sg_chain', 'sg_id', 'source', 'source_type', 'to_port', 'triggering_rule', 'vpc_id']

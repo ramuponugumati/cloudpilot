@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/health_monitor.py
+# hypothesis_version: 6.151.9
+
+[200, ', ', '0.1.0', 'Cost', 'Health event', 'Performance', 'Reliability', 'Security', 'accountNotification', 'affected_resources', 'arn', 'category', 'check_id', 'checks', 'closed', 'cost_optimizing', 'en', 'entities', 'entityValue', 'error', 'eventArns', 'eventDescription', 'eventStatusCodes', 'eventTypeCategory', 'event_arn', 'events', 'fault_tolerance', 'flaggedResources', 'flagged_count', 'from', 'global', 'health', 'health-monitor', 'id', 'issue', 'latestDescription', 'ok', 'open', 'performance', 'region', 'result', 'scheduledChange', 'security', 'service', 'startTimes', 'status', 'statusCode', 'successfulSet', 'support', 'upcoming', 'us-east-1', 'warning', '⚠ Service issue', '📅 Scheduled change', '📢 Notification']

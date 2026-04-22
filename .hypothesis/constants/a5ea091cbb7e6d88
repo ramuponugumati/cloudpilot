@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/capacity_planner.py
+# hypothesis_version: 6.151.9
+
+[0.5, 0.98, 1.006, 1.212, 2.03, 2.35, 32.77, 98.32, 131.22, 100, 730, '0.1.0', 'CapacityReservations', 'CurrentInstanceCount', 'DesiredInstanceCount', 'EndpointName', 'Endpoints', 'InService', 'InstanceType', 'MaxInstanceCount', 'Name', 'On-Demand', 'ProductionVariants', 'QuotaName', 'Quotas', 'Running', 'TotalInstanceCount', 'Value', 'Values', 'active', 'available', 'capacity-planner', 'cloudwatch', 'ec2', 'g5.2xlarge', 'g5.4xlarge', 'g5.xlarge', 'g6e.4xlarge', 'g6e.xlarge', 'instance_type', 'list_service_quotas', 'ml.g5.4xlarge', 'ml.p4d.24xlarge', 'p4d.24xlarge', 'p5.48xlarge', 'p5en.48xlarge', 'sagemaker', 'service-quotas', 'state', 'total', 'used']

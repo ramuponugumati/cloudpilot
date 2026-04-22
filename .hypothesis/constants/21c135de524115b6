@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/network_topology.py
+# hypothesis_version: 6.151.9
+
+['        end', '    end', ',', '-', '0.0.0.0/0', '0.1.0', 'AvailabilityZone', 'CidrBlock', 'Key', 'Name', 'Private', 'Public', 'SubnetId', 'Subnets', 'Tags', 'Value', 'VpcId', 'Vpcs', '_', 'accepter_vpc_id', 'availability_zone', 'cidr', 'component_summary', 'describe_subnets', 'describe_vpcs', 'destination_cidr', 'ec2', 'graph TB', 'igw_id', 'internet-gateway', 'internet_gateways', 'local', 'mermaid_diagram', 'name', 'nat_gateways', 'nat_gw_id', 'network-topology', 'peering_id', 'peerings', 'private', 'public', 'region', 'requester_vpc_id', 'route_table_id', 'route_tables', 'routes', 'status', 'subnet_associations', 'subnet_id', 'subnets', 'target_id', 'target_type', 'total', 'unknown', 'vpc_id', 'vpcs']
