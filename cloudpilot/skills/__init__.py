@@ -20,4 +20,5 @@ from cloudpilot.skills import (
     connectivity_diagnoser,
     network_topology,
     drift_detector,
+    backup_dr_posture,
 )
