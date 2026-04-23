@@ -224,12 +224,12 @@ body {
 .code-block-wrapper code { font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace; }
 .copy-btn {
     position: absolute; top: 8px; right: 8px;
-    background: var(--bg-card); color: var(--text-secondary);
+    background: #f0f6f3; color: var(--text-secondary);
     border: 1px solid var(--border); border-radius: 6px;
     padding: 4px 10px; cursor: pointer; font-size: 11px;
     font-weight: 500; transition: all var(--transition);
 }
-.copy-btn:hover { color: var(--glow-cyan); border-color: var(--glow-cyan); }
+.copy-btn:hover { color: var(--accent); border-color: var(--accent); }
 
 /* Mermaid diagrams */
 .mermaid-container {
@@ -253,7 +253,7 @@ body {
     border-left: 4px solid var(--text-muted);
     transition: all var(--transition);
 }
-.finding-card:hover { box-shadow: 0 0 16px rgba(0,180,255,0.1); }
+.finding-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
 .finding-card.critical { border-left-color: var(--glow-red); box-shadow: inset 0 0 20px rgba(255,82,82,0.06); }
 .finding-card.high { border-left-color: var(--glow-orange); box-shadow: inset 0 0 20px rgba(255,145,0,0.06); }
 .finding-card.medium { border-left-color: var(--glow-yellow); box-shadow: inset 0 0 20px rgba(255,234,0,0.04); }
@@ -438,7 +438,7 @@ body {
     display: grid;
     grid-template-columns: 28px 1fr auto;
     align-items: center;
-    background: rgba(255,255,255,0.04);
+    background: #f0f6f3;
     border-radius: 8px;
     padding: 8px 12px;
     gap: 10px;
@@ -453,20 +453,23 @@ body {
     overflow: hidden;
 }
 .rem-title {
-    color: #e8eeff;
+    color: #1a2e28;
     font-size: 0.85em;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
 }
 .rem-meta {
-    color: #7a84a0;
+    color: #5f7a70;
     font-size: 0.75em;
     display: block;
 }
 .rem-btn {
-    border: 1px solid;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    background: transparent;
     border-radius: 6px;
     padding: 5px 12px;
     font-size: 0.78em;
@@ -476,7 +479,8 @@ body {
     transition: all 0.2s;
 }
 .rem-btn:hover:not(:disabled) {
-    filter: brightness(1.3);
+    background: var(--accent);
+    color: #fff;
     transform: scale(1.02);
 }
 .rem-btn:disabled {
@@ -486,10 +490,10 @@ body {
 .rem-followup {
     margin-top: 10px;
     padding: 10px 14px;
-    background: rgba(0,180,255,0.08);
-    border: 1px solid rgba(0,180,255,0.2);
+    background: rgba(42,157,110,0.06);
+    border: 1px solid rgba(42,157,110,0.15);
     border-radius: 8px;
-    color: #c4ccee;
+    color: var(--text-primary);
     font-size: 0.85em;
     line-height: 1.5;
 }
