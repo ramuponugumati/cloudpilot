@@ -42,10 +42,15 @@
                     <button class="action-btn" data-action="Find security issues">🛡️ Security Check</button>
                     <button class="action-btn" data-action="Find zombie resources wasting money">🧟 Zombie Hunt</button>
                     <button class="action-btn" data-action="Show cost optimization opportunities">💰 Cost Optimize</button>
-                    <button class="action-btn" data-action="Generate Terraform for my infrastructure">🏗️ Generate IaC</button>
+                    <button class="action-btn" data-action="Run backup and DR posture check">🔄 DR Readiness</button>
+                    <button class="action-btn" data-action="Run all skills and give me a full report">🚀 Full Scan</button>
                 </div>
                 <div class="sidebar-section">
-                    <h3>Skills</h3>
+                    <h3>Suites</h3>
+                    <div id="suites-list" class="suites-list"></div>
+                </div>
+                <div class="sidebar-section">
+                    <h3>All Skills</h3>
                     <div id="skills-list" class="skills-list"></div>
                 </div>
             </aside>
@@ -56,16 +61,17 @@
                     <div class="message assistant">
                         <div class="message-content">
                             <p>Hey there! I'm <strong>CloudPilot</strong> — your AWS infrastructure intelligence co-pilot.</p>
-                            <p>I'm a full AWS Solutions Architect who can help with anything cloud:</p>
+                            <p>I'm a full AWS Solutions Architect with <strong>28 scanning skills</strong> across 7 suites:</p>
                             <ul>
-                                <li>🏗️ <strong>Architecture</strong> — Design patterns, service selection, best practices</li>
-                                <li>📡 <strong>Cost Radar</strong> — 3-month spend overview, anomaly detection, optimization</li>
-                                <li>🛡️ <strong>Security</strong> — Posture assessment, IAM guidance, compliance</li>
-                                <li>🗺️ <strong>Discovery</strong> — Map all resources, generate architecture diagrams</li>
-                                <li>🏗️ <strong>IaC</strong> — Generate CDK, CloudFormation, or Terraform from live infra</li>
-                                <li>📰 <strong>What's New</strong> — Latest AWS launches and feature announcements</li>
+                                <li>💰 <strong>FinOps</strong> — Cost radar, zombie hunting, RI/SP optimization, DB right-sizing</li>
+                                <li>🛡️ <strong>Security</strong> — CSPM (25 checks), data classification, secrets hygiene, SG analysis</li>
+                                <li>🌐 <strong>Network</strong> — Path tracing, connectivity diagnosis, topology diagrams, DNS/certs</li>
+                                <li>🏗️ <strong>Platform</strong> — IaC drift detection, EKS optimization, serverless tuning</li>
+                                <li>🔄 <strong>Resilience</strong> — Backup/DR scoring, blast radius, health monitoring</li>
+                                <li>🏢 <strong>Governance</strong> — Tag enforcement, quotas, multi-account, shadow IT</li>
+                                <li>🚀 <strong>Modernization</strong> — Graviton migration, managed service advisor</li>
                             </ul>
-                            <p>Try: <em>"What's the best database for time-series data?"</em> or <em>"Run cost-radar"</em> or <em>"What's new with Bedrock?"</em></p>
+                            <p>Try: <em>"Run a full scan"</em> or <em>"Check my DR readiness"</em> or <em>"Find security issues"</em></p>
                         </div>
                     </div>
                 </div>

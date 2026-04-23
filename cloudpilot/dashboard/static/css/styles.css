@@ -493,3 +493,67 @@ body {
     font-size: 0.85em;
     line-height: 1.5;
 }
+
+/* Suite Cards — collapsible sidebar navigation */
+.suites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.suite-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    transition: all var(--transition);
+    border-left: 3px solid var(--suite-color, var(--accent));
+}
+.suite-card:hover {
+    border-color: var(--suite-color, var(--accent));
+    box-shadow: 0 0 12px color-mix(in srgb, var(--suite-color) 20%, transparent);
+}
+.suite-card.expanded {
+    background: color-mix(in srgb, var(--suite-color) 5%, var(--bg-card));
+}
+.suite-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    user-select: none;
+}
+.suite-icon {
+    font-size: 16px;
+}
+.suite-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-bright);
+}
+.suite-count {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--suite-color, var(--accent));
+    background: color-mix(in srgb, var(--suite-color) 15%, transparent);
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+.suite-skills {
+    padding: 0 12px 10px;
+}
+.suite-skill {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 5px 8px;
+    margin-top: 3px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.suite-skill:hover {
+    background: color-mix(in srgb, var(--suite-color) 12%, var(--bg-card));
+    color: var(--text-bright);
+    transform: translateX(4px);
+}
