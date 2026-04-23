@@ -4,37 +4,37 @@
 
 const SUITES = [
     {
-        name: 'FinOps', icon: '💰', color: '#4a8c6f',
+        name: 'FinOps', icon: '💰', color: '#d97706',
         skills: ['cost-radar', 'zombie-hunter', 'costopt-intelligence', 'database-optimizer'],
         action: 'Use the run_suite tool with skill_names: cost-radar, zombie-hunter, costopt-intelligence, database-optimizer',
     },
     {
-        name: 'Security', icon: '🛡️', color: '#5a9a7e',
+        name: 'Security', icon: '🛡️', color: '#dc2626',
         skills: ['security-posture', 'data-security', 'secrets-hygiene', 'sg-chain-analyzer'],
         action: 'Use the run_suite tool with skill_names: security-posture, data-security, secrets-hygiene, sg-chain-analyzer',
     },
     {
-        name: 'Network', icon: '🌐', color: '#5e9485',
+        name: 'Network', icon: '🌐', color: '#2563eb',
         skills: ['network-path-tracer', 'connectivity-diagnoser', 'network-topology', 'dns-cert-manager'],
         action: 'Use the run_suite tool with skill_names: network-path-tracer, connectivity-diagnoser, network-topology, dns-cert-manager',
     },
     {
-        name: 'Platform', icon: '🏗️', color: '#508e74',
+        name: 'Platform', icon: '🏗️', color: '#7c3aed',
         skills: ['drift-detector', 'eks-optimizer', 'serverless-optimizer', 'arch-diagram', 'lifecycle-tracker'],
         action: 'Use the run_suite tool with skill_names: drift-detector, eks-optimizer, serverless-optimizer, arch-diagram, lifecycle-tracker',
     },
     {
-        name: 'Resilience', icon: '🔄', color: '#5b9080',
+        name: 'Resilience', icon: '🔄', color: '#0891b2',
         skills: ['resiliency-gaps', 'backup-dr-posture', 'blast-radius', 'health-monitor', 'capacity-planner'],
         action: 'Use the run_suite tool with skill_names: resiliency-gaps, backup-dr-posture, blast-radius, health-monitor, capacity-planner',
     },
     {
-        name: 'Governance', icon: '🏢', color: '#4d8a78',
+        name: 'Governance', icon: '🏢', color: '#4f46e5',
         skills: ['tag-enforcer', 'quota-guardian', 'multi-account-governance', 'shadow-it-detector'],
         action: 'Use the run_suite tool with skill_names: tag-enforcer, quota-guardian, multi-account-governance, shadow-it-detector',
     },
     {
-        name: 'Modernization', icon: '🚀', color: '#55967a',
+        name: 'Modernization', icon: '🚀', color: '#059669',
         skills: ['modernization-advisor', 'event-analysis'],
         action: 'Use the run_suite tool with skill_names: modernization-advisor, event-analysis',
     },
