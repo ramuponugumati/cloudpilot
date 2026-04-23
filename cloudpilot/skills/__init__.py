@@ -23,4 +23,8 @@ from cloudpilot.skills import (
     backup_dr_posture,
     data_security,
     eks_optimizer,
+    secrets_hygiene,
+    serverless_optimizer,
+    dns_cert_manager,
+    database_optimizer,
 )

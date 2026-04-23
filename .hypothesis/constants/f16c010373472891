@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/dns_cert_manager.py
+# hypothesis_version: 6.151.9
+
+['/', '0.1.0', 'ACM in %s: %s', 'AliasTarget', 'CNAME', 'Certificate', 'CertificateArn', 'Checker failed: %s', 'Config', 'DomainName', 'HostedZones', 'ISSUED', 'Id', 'InUseBy', 'Name', 'NotAfter', 'NotBefore', 'PrivateZone', 'RenewalEligibility', 'ResourceRecordSets', 'Route53: %s', 'Status', 'Type', 'acm', 'arn', 'certificates', 'days_until_expiry', 'dns-cert-manager', 'domain', 'errors', 'expiry_date', 'hosted_zones', 'id', 'in_use_by', 'list_certificates', 'name', 'not_after', 'not_before', 'private', 'record_count', 'records', 'region', 'renewal_eligibility', 'route53', 'status', 'type', 'unknown', 'us-east-1', 'zone_id', 'zone_name']

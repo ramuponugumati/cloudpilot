@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/secrets_hygiene.py
+# hypothesis_version: 6.151.9
+
+['0.1.0', 'ARN', 'Checker failed: %s', 'CreatedDate', 'Key', 'LastAccessedDate', 'LastModifiedDate', 'LastRotatedDate', 'Name', 'Parameters', 'RotationEnabled', 'SSM params in %s: %s', 'SecretList', 'SecureString', 'Tags', 'Type', 'Values', 'Version', 'arn', 'created', 'describe_parameters', 'errors', 'isoformat', 'last_accessed', 'last_accessed_days', 'last_modified', 'last_modified_days', 'last_rotated', 'last_rotated_days', 'list_secrets', 'name', 'never', 'parameter_name', 'parameters', 'region', 'rotation_enabled', 'secret_name', 'secrets', 'secrets-hygiene', 'secretsmanager', 'ssm', 'tags', 'type', 'version']

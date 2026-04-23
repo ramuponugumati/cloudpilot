@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/serverless_optimizer.py
+# hypothesis_version: 6.151.9
+
+[128, 300, 512, 1000000, 50000000, '0.1.0', 'Architectures', 'CodeSize', 'FunctionArn', 'FunctionName', 'Functions', 'Handler', 'Lambda in %s: %s', 'Layers', 'MemorySize', 'Runtime', 'STANDARD', 'Timeout', 'architectures', 'arm64', 'arn', 'code_size', 'code_size_mb', 'current_arch', 'dotnet6', 'dotnet8', 'errors', 'function', 'functions', 'handler', 'java11', 'java17', 'java21', 'lambda', 'layers', 'list_functions', 'memory', 'memory_mb', 'name', 'region', 'runtime', 'serverless-optimizer', 'stateMachineArn', 'stateMachines', 'state_machine', 'step_functions', 'stepfunctions', 'timeout', 'timeout_seconds', 'type', 'x86_64']
