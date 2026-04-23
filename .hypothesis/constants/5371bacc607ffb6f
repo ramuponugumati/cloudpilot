@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/shadow_it_detector.py
+# hypothesis_version: 6.151.9
+
+['.', '0.1.0', 'AttributeKey', 'AttributeValue', 'Checker failed: %s', 'CloudTrail: %s', 'EC2 in %s: %s', 'Environment', 'EventName', 'EventTime', 'Events', 'InstanceId', 'InstanceType', 'Instances', 'Key', 'LaunchTime', 'Name', 'Reservations', 'ResourceName', 'Resources', 'RunInstances', 'Tags', 'Team', 'Username', 'Value', 'Values', 'approved_families', 'appstream', 'c5', 'c6i', 'c7g', 'cloudtrail', 'describe_instances', 'ec2', 'errors', 'event_count', 'event_name', 'event_time', 'existing_tags', 'family', 'id', 'instance-state-name', 'instance_id', 'instance_name', 'instance_type', 'instances', 'isoformat', 'launch_time', 'lightsail', 'm5', 'm6i', 'm7g', 'name', 'r5', 'r6i', 'r7g', 'recent_events', 'region', 'resources', 'running', 'shadow-it-detector', 't3', 't4g', 'tags', 'type', 'us-east-1', 'username', 'users', 'workspaces']

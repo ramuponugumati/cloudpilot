@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/modernization_advisor.py
+# hypothesis_version: 6.151.9
+
+['.', '0.1.0', 'Amazon DocumentDB', 'Amazon MSK', 'Amazon RDS for MySQL', 'Architecture', 'Checker failed: %s', 'EC2 in %s: %s', 'InstanceId', 'InstanceType', 'Instances', 'Key', 'Name', 'PlatformDetails', 'Reservations', 'Tags', 'Value', 'Values', 'apache', 'architecture', 'arm64', 'c3', 'c4', 'c5', 'c6i', 'current_arch', 'd2', 'describe_instances', 'detected_workload', 'ec2', 'elasticsearch', 'errors', 'family', 'grafana', 'i2', 'id', 'instance-state-name', 'instance_id', 'instance_name', 'instance_type', 'instances', 'jenkins', 'kafka', 'm3', 'm4', 'm5', 'm6i', 'memcached', 'mongodb', 'mysql', 'name', 'nginx', 'platform', 'postgresql', 'prometheus', 'r3', 'r4', 'r5', 'r6i', 'rabbitmq', 'recommended_service', 'redis', 'region', 'running', 't1', 't2', 't3', 'type']

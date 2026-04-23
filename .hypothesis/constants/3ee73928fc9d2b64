@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/multi_account_governance.py
+# hypothesis_version: 6.151.9
+
+['0.1.0', 'ACTIVE', 'Accounts', 'Checker failed: %s', 'Control Tower active', 'Control Tower: %s', 'Email', 'FullAWSAccess', 'Id', 'JoinedTimestamp', 'Name', 'OrganizationalUnits', 'Organizations: %s', 'Policies', 'Roots', 'SUSPENDED', 'Status', 'account_count', 'accounts', 'controltower', 'ct_landing_zone', 'email', 'errors', 'id', 'isoformat', 'joined', 'landingZones', 'list_accounts', 'name', 'organizations', 'ou_count', 'ous', 'roots', 'scp_names', 'scps', 'status', 'suspended_accounts', 'us-east-1']

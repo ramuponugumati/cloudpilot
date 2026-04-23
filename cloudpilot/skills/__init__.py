@@ -27,4 +27,8 @@ from cloudpilot.skills import (
     serverless_optimizer,
     dns_cert_manager,
     database_optimizer,
+    multi_account_governance,
+    modernization_advisor,
+    blast_radius,
+    shadow_it_detector,
 )
