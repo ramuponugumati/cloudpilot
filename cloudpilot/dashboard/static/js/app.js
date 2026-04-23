@@ -4,37 +4,37 @@
 
 const SUITES = [
     {
-        name: 'FinOps', icon: '💰', color: '#fbbf24',
+        name: 'FinOps', icon: '💰', color: '#6b7fa3',
         skills: ['cost-radar', 'zombie-hunter', 'costopt-intelligence', 'database-optimizer'],
         action: 'Run FinOps suite: cost-radar, zombie-hunter, costopt-intelligence, database-optimizer',
     },
     {
-        name: 'Security', icon: '🛡️', color: '#00e676',
+        name: 'Security', icon: '🛡️', color: '#7b8fad',
         skills: ['security-posture', 'data-security', 'secrets-hygiene', 'sg-chain-analyzer'],
         action: 'Run Security suite: security-posture, data-security, secrets-hygiene, sg-chain-analyzer',
     },
     {
-        name: 'Network', icon: '🌐', color: '#60a5fa',
+        name: 'Network', icon: '🌐', color: '#8a9bb5',
         skills: ['network-path-tracer', 'connectivity-diagnoser', 'network-topology', 'dns-cert-manager'],
         action: 'Run Network suite: network-path-tracer, connectivity-diagnoser, network-topology, dns-cert-manager',
     },
     {
-        name: 'Platform', icon: '🏗️', color: '#a78bfa',
+        name: 'Platform', icon: '🏗️', color: '#7886a0',
         skills: ['drift-detector', 'eks-optimizer', 'serverless-optimizer', 'arch-diagram', 'lifecycle-tracker'],
         action: 'Run Platform suite: drift-detector, eks-optimizer, serverless-optimizer, arch-diagram, lifecycle-tracker',
     },
     {
-        name: 'Resilience', icon: '🔄', color: '#f472b6',
+        name: 'Resilience', icon: '🔄', color: '#8694ab',
         skills: ['resiliency-gaps', 'backup-dr-posture', 'blast-radius', 'health-monitor', 'capacity-planner'],
         action: 'Run Resilience suite: resiliency-gaps, backup-dr-posture, blast-radius, health-monitor, capacity-planner',
     },
     {
-        name: 'Governance', icon: '🏢', color: '#22d3ee',
+        name: 'Governance', icon: '🏢', color: '#7e90a8',
         skills: ['tag-enforcer', 'quota-guardian', 'multi-account-governance', 'shadow-it-detector'],
         action: 'Run Governance suite: tag-enforcer, quota-guardian, multi-account-governance, shadow-it-detector',
     },
     {
-        name: 'Modernization', icon: '🚀', color: '#34d399',
+        name: 'Modernization', icon: '🚀', color: '#7289a0',
         skills: ['modernization-advisor', 'event-analysis'],
         action: 'Run Modernization suite: modernization-advisor, event-analysis',
     },
