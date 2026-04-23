@@ -163,13 +163,33 @@ def execute_tool(
         return {"diagram": mermaid, "view_type": view_type, "resource_count": len(resources)}
 
     elif tool_name == "detect_drift":
-        from cloudpilot.core import StubToolResponse
-        stub = StubToolResponse(
-            tool_name="detect_drift",
-            description="Infrastructure drift detection comparing live AWS resources against IaC definitions. Supports IaC drift, configuration drift, and baseline drift.",
-            planned_capabilities=["IaC drift (CDK/CFN/Terraform vs live)", "Configuration drift (baseline vs current)", "Compliance drift (policy violations)"],
+        regions = tool_input.get("regions") or get_regions(profile=profile)
+        from cloudpilot.skills.drift_detector import DriftDetector
+        detector = DriftDetector()
+        start = time.time()
+        result = detector.scan(
+            regions, profile,
+            drift_types=tool_input.get("drift_types"),
+            stack_names=tool_input.get("stack_names"),
+            terraform_state_path=tool_input.get("terraform_state_path"),
+            baseline=tool_input.get("baseline"),
+            policies=tool_input.get("policies"),
         )
-        return stub.to_dict()
+        duration = time.time() - start
+        findings = [f.to_dict() for f in result.findings]
+        if findings_store is not None:
+            findings_store.extend(findings)
+        if skills_run is not None and detector.name not in skills_run:
+            skills_run.append(detector.name)
+        return {
+            "skill": detector.name,
+            "findings_count": len(findings),
+            "findings": findings[:20],
+            "duration_seconds": round(duration, 1),
+            "total_impact": round(result.total_impact, 2),
+            "critical_count": result.critical_count,
+            "metadata": result.metadata,
+        }
 
     elif tool_name == "trace_network_path":
         regions = tool_input.get("regions") or get_regions(profile=profile)

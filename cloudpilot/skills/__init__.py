@@ -19,4 +19,5 @@ from cloudpilot.skills import (
     sg_chain_analyzer,
     connectivity_diagnoser,
     network_topology,
+    drift_detector,
 )

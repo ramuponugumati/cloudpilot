@@ -5,7 +5,7 @@ TOOL_DEFINITIONS = [
     {
         "toolSpec": {
             "name": "run_skill",
-            "description": "Run a CloudPilot scanning skill against the AWS account. Available skills: cost-radar, zombie-hunter, security-posture, capacity-planner, event-analysis, resiliency-gaps, tag-enforcer, lifecycle-tracker, health-monitor, quota-guardian, costopt-intelligence, arch-diagram, network-path-tracer, sg-chain-analyzer, connectivity-diagnoser, network-topology.",
+            "description": "Run a CloudPilot scanning skill against the AWS account. Available skills: cost-radar, zombie-hunter, security-posture, capacity-planner, event-analysis, resiliency-gaps, tag-enforcer, lifecycle-tracker, health-monitor, quota-guardian, costopt-intelligence, arch-diagram, network-path-tracer, sg-chain-analyzer, connectivity-diagnoser, network-topology, drift-detector.",
             "inputSchema": {
                 "json": {
                     "type": "object",
@@ -190,13 +190,40 @@ TOOL_DEFINITIONS = [
     {
         "toolSpec": {
             "name": "detect_drift",
-            "description": "Detect infrastructure drift between live AWS resources and IaC definitions. COMING SOON in Phase 2 — will support IaC drift, configuration drift, and baseline drift detection.",
+            "description": "Detect infrastructure drift between live AWS resources and IaC definitions, configuration baselines, or compliance policies.",
             "inputSchema": {
                 "json": {
                     "type": "object",
                     "properties": {
-                        "scope": {"type": "string", "description": "Scope of drift detection"},
-                    },
+                        "drift_types": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Drift categories: iac_cfn, iac_terraform, configuration, compliance. Defaults to all."
+                        },
+                        "regions": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "AWS regions to scan. Omit for all regions."
+                        },
+                        "stack_names": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Limit CloudFormation drift to these stack names."
+                        },
+                        "terraform_state_path": {
+                            "type": "string",
+                            "description": "File path to a Terraform state file (v4 format)."
+                        },
+                        "baseline": {
+                            "type": "object",
+                            "description": "Baseline snapshot for configuration drift comparison."
+                        },
+                        "policies": {
+                            "type": "array",
+                            "items": {"type": "object"},
+                            "description": "Compliance policy rules. Omit to use built-in defaults."
+                        }
+                    }
                 }
             },
         }

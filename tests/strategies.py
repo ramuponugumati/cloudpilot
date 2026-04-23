@@ -35,6 +35,7 @@ SKILL_NAMES = [
     "quota-guardian", "costopt-intelligence", "arch-diagram",
     "network-path-tracer", "sg-chain-analyzer",
     "connectivity-diagnoser", "network-topology",
+    "drift-detector",
 ]
 
 # Severity values
@@ -297,3 +298,67 @@ resource_network_info_strategy = st.fixed_dictionaries({
     "security_group_ids": st.lists(_aws_id("sg-"), min_size=1, max_size=3),
     "private_ip": _private_ipv4(),
 })
+
+
+# ---------------------------------------------------------------------------
+# Drift Detection: Strategies
+# ---------------------------------------------------------------------------
+
+# Strategy: CloudFormation resource drift result
+cfn_drift_result_strategy = st.fixed_dictionaries({
+    "StackResourceDriftStatus": st.sampled_from(["MODIFIED", "DELETED", "NOT_CHECKED"]),
+    "ResourceType": st.sampled_from(["AWS::EC2::Instance", "AWS::S3::Bucket", "AWS::RDS::DBInstance", "AWS::Lambda::Function"]),
+    "LogicalResourceId": st.text(alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", min_size=3, max_size=20),
+    "PhysicalResourceId": _aws_id("i-"),
+    "PropertyDifferences": st.just([]),
+})
+
+
+# Strategy: Terraform state v4 JSON
+terraform_state_v4_strategy = st.fixed_dictionaries({
+    "version": st.just(4),
+    "terraform_version": st.just("1.5.0"),
+    "resources": st.lists(
+        st.fixed_dictionaries({
+            "type": st.sampled_from(["aws_instance", "aws_s3_bucket", "aws_db_instance", "aws_lambda_function"]),
+            "name": st.text(alphabet="abcdefghijklmnopqrstuvwxyz_", min_size=3, max_size=15),
+            "provider": st.just("registry.terraform.io/hashicorp/aws"),
+            "instances": st.just([{"attributes": {"id": "i-test123", "instance_type": "t3.micro"}}]),
+        }),
+        min_size=1, max_size=5,
+    ),
+})
+
+
+# Strategy: Baseline snapshot
+baseline_snapshot_strategy = st.builds(
+    lambda resources: {
+        "timestamp": "2025-01-15T10:30:00+00:00",
+        "account_id": "123456789012",
+        "regions": ["us-east-1"],
+        "resources": resources,
+    },
+    st.lists(resource_strategy, min_size=0, max_size=5),
+)
+
+
+# Strategy: Compliance policy rule
+compliance_policy_strategy = st.fixed_dictionaries({
+    "name": st.text(alphabet="abcdefghijklmnopqrstuvwxyz-", min_size=5, max_size=30),
+    "resource_type": st.sampled_from(["ec2", "rds", "s3", "lambda"]),
+    "property_path": st.sampled_from(["metadata.encryption", "metadata.multi_az", "metadata.storage_encrypted", "metadata.imdsv2"]),
+    "operator": st.sampled_from(["equals", "not_equals", "exists", "not_exists", "contains", "greater_than", "less_than"]),
+    "expected_value": st.one_of(st.booleans(), st.text(min_size=1, max_size=10), st.integers(min_value=0, max_value=100)),
+    "severity": st.sampled_from(["critical", "high", "medium", "low"]),
+})
+
+
+# Strategy: Operator test cases — (actual_value, operator, expected_value, expected_result)
+operator_test_case_strategy = st.one_of(
+    st.tuples(st.integers(), st.just("equals"), st.integers()).map(lambda t: (t[0], t[1], t[2], t[0] == t[2])),
+    st.tuples(st.integers(), st.just("not_equals"), st.integers()).map(lambda t: (t[0], t[1], t[2], t[0] != t[2])),
+    st.tuples(st.one_of(st.integers(), st.none()), st.just("exists"), st.just(True)).map(lambda t: (t[0], t[1], t[2], t[0] is not None)),
+    st.tuples(st.one_of(st.integers(), st.none()), st.just("not_exists"), st.just(True)).map(lambda t: (t[0], t[1], t[2], t[0] is None)),
+    st.tuples(st.integers(min_value=0, max_value=100), st.just("greater_than"), st.integers(min_value=0, max_value=100)).map(lambda t: (t[0], t[1], t[2], t[0] > t[2])),
+    st.tuples(st.integers(min_value=0, max_value=100), st.just("less_than"), st.integers(min_value=0, max_value=100)).map(lambda t: (t[0], t[1], t[2], t[0] < t[2])),
+)
