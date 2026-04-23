@@ -557,3 +557,98 @@ body {
     color: var(--text-bright);
     transform: translateX(4px);
 }
+
+/* Suite Cards — accordion sidebar navigation */
+.suites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.suite-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    transition: all var(--transition);
+    border-left: 3px solid var(--suite-color, var(--accent));
+}
+.suite-card:hover {
+    border-color: var(--suite-color, var(--accent));
+    box-shadow: 0 0 12px color-mix(in srgb, var(--suite-color) 20%, transparent);
+}
+.suite-card.expanded {
+    background: color-mix(in srgb, var(--suite-color) 5%, var(--bg-card));
+    border-color: var(--suite-color, var(--accent));
+}
+.suite-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    user-select: none;
+}
+.suite-icon {
+    font-size: 16px;
+}
+.suite-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-bright);
+}
+.suite-count {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--suite-color, var(--accent));
+    background: color-mix(in srgb, var(--suite-color) 15%, transparent);
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+.suite-chevron {
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+.suite-card.expanded .suite-chevron {
+    color: var(--suite-color, var(--accent));
+}
+.suite-skills {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding: 0 12px;
+}
+.suite-card.expanded .suite-skills {
+    padding-bottom: 10px;
+}
+.suite-skill {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 5px 8px;
+    margin-top: 3px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.suite-skill:hover {
+    background: color-mix(in srgb, var(--suite-color) 12%, var(--bg-card));
+    color: var(--text-bright);
+    transform: translateX(4px);
+}
+.suite-run-btn {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--suite-color, var(--accent));
+    padding: 6px 8px;
+    margin-top: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    border: 1px dashed color-mix(in srgb, var(--suite-color) 30%, transparent);
+    transition: all 0.2s;
+}
+.suite-run-btn:hover {
+    background: color-mix(in srgb, var(--suite-color) 15%, var(--bg-card));
+    border-style: solid;
+}

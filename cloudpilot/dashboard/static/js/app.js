@@ -1,5 +1,5 @@
 /**
- * CloudPilot App — main entry point with suite-based navigation
+ * CloudPilot App — suite-based navigation with accordion behavior
  */
 
 const SUITES = [
@@ -56,10 +56,12 @@ const SKILL_ICONS = {
 document.addEventListener('DOMContentLoaded', async () => {
     Chat.init();
 
-    // Render suites
+    // Render suites with accordion behavior
     const suitesList = document.getElementById('suites-list');
+    const suiteCards = [];
+
     if (suitesList) {
-        SUITES.forEach(suite => {
+        SUITES.forEach((suite, idx) => {
             const el = document.createElement('div');
             el.className = 'suite-card';
             el.style.setProperty('--suite-color', suite.color);
@@ -68,21 +70,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <span class="suite-icon">${suite.icon}</span>
                     <span class="suite-name">${suite.name}</span>
                     <span class="suite-count">${suite.skills.length}</span>
+                    <span class="suite-chevron">▸</span>
                 </div>
-                <div class="suite-skills" style="display:none">
-                    ${suite.skills.map(s => `<div class="suite-skill" data-skill="${s}">${SKILL_ICONS[s] || '📎'} ${s}</div>`).join('')}
+                <div class="suite-skills">
+                    ${suite.skills.map(s =>
+                        `<div class="suite-skill" data-skill="${s}">${SKILL_ICONS[s] || '📎'} ${s}</div>`
+                    ).join('')}
+                    <div class="suite-run-btn" data-idx="${idx}">▶ Run entire suite</div>
                 </div>
             `;
-            // Toggle expand
+            suiteCards.push(el);
+
+            // Accordion: click header toggles this, closes others
             el.querySelector('.suite-header').addEventListener('click', () => {
-                const skillsDiv = el.querySelector('.suite-skills');
-                skillsDiv.style.display = skillsDiv.style.display === 'none' ? 'block' : 'none';
-                el.classList.toggle('expanded');
+                const isOpen = el.classList.contains('expanded');
+                // Close all
+                suiteCards.forEach(card => {
+                    card.classList.remove('expanded');
+                    card.querySelector('.suite-skills').style.maxHeight = '0';
+                    card.querySelector('.suite-chevron').textContent = '▸';
+                });
+                // Open clicked (if it was closed)
+                if (!isOpen) {
+                    el.classList.add('expanded');
+                    const skillsDiv = el.querySelector('.suite-skills');
+                    skillsDiv.style.maxHeight = skillsDiv.scrollHeight + 'px';
+                    el.querySelector('.suite-chevron').textContent = '▾';
+                }
             });
-            // Run suite on double-click header
-            el.querySelector('.suite-header').addEventListener('dblclick', () => {
+
+            // Run suite button
+            el.querySelector('.suite-run-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
                 Chat.sendQuickAction(suite.action);
             });
+
             // Individual skill clicks
             el.querySelectorAll('.suite-skill').forEach(skillEl => {
                 skillEl.addEventListener('click', (e) => {
@@ -90,27 +112,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     Chat.sendQuickAction(`Run the ${skillEl.dataset.skill} skill`);
                 });
             });
+
             suitesList.appendChild(el);
         });
-    }
-
-    // Load all skills into the flat list
-    try {
-        const skills = await API.listSkills();
-        const skillsList = document.getElementById('skills-list');
-        skills.forEach(s => {
-            const el = document.createElement('div');
-            el.className = 'skill-tag';
-            el.style.setProperty('--skill-color', '#00b4ff');
-            el.textContent = `${SKILL_ICONS[s.name] || '📎'} ${s.name}`;
-            el.title = s.description;
-            el.addEventListener('click', () => {
-                Chat.sendQuickAction(`Run the ${s.name} skill`);
-            });
-            skillsList.appendChild(el);
-        });
-    } catch (e) {
-        console.warn('Could not load skills:', e);
     }
 
     // Quick action buttons
