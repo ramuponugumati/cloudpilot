@@ -86,6 +86,42 @@ def execute_tool(
             "top_findings": sorted(all_findings, key=lambda f: f.get("monthly_impact", 0), reverse=True)[:10],
         }
 
+    elif tool_name == "run_suite":
+        skill_names = tool_input.get("skill_names", [])
+        regions = tool_input.get("regions") or get_regions(profile=profile)
+        all_findings = []
+        summaries = []
+        for skill_name in skill_names:
+            skill = SkillRegistry.get(skill_name)
+            if not skill:
+                summaries.append({"skill": skill_name, "error": f"Unknown skill: {skill_name}"})
+                continue
+            try:
+                start = time.time()
+                result = skill.scan(regions, profile)
+                duration = time.time() - start
+                findings = [f.to_dict() for f in result.findings]
+                all_findings.extend(findings)
+                if skills_run is not None and skill_name not in skills_run:
+                    skills_run.append(skill_name)
+                summaries.append({
+                    "skill": skill_name,
+                    "findings": len(findings),
+                    "impact": round(result.total_impact, 2),
+                    "critical": result.critical_count,
+                    "duration": round(duration, 1),
+                })
+            except Exception as e:
+                summaries.append({"skill": skill_name, "error": str(e)})
+        if findings_store is not None:
+            findings_store.extend(all_findings)
+        return {
+            "suite_skills": skill_names,
+            "total_findings": len(all_findings),
+            "skills_summary": summaries,
+            "top_findings": sorted(all_findings, key=lambda f: f.get("monthly_impact", 0), reverse=True)[:10],
+        }
+
     elif tool_name == "remediate_finding":
         finding = tool_input.get("finding", {})
         from cloudpilot.dashboard.remediation import has_remediation, execute_remediation

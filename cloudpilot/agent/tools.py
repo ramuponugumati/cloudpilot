@@ -42,6 +42,30 @@ TOOL_DEFINITIONS = [
     },
     {
         "toolSpec": {
+            "name": "run_suite",
+            "description": "Run a suite of CloudPilot skills together. Suites: FinOps (cost-radar, zombie-hunter, costopt-intelligence, database-optimizer), Security (security-posture, data-security, secrets-hygiene, sg-chain-analyzer), Network (network-path-tracer, connectivity-diagnoser, network-topology, dns-cert-manager), Platform (drift-detector, eks-optimizer, serverless-optimizer, arch-diagram, lifecycle-tracker), Resilience (resiliency-gaps, backup-dr-posture, blast-radius, health-monitor, capacity-planner), Governance (tag-enforcer, quota-guardian, multi-account-governance, shadow-it-detector), Modernization (modernization-advisor, event-analysis).",
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {
+                        "skill_names": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "List of skill names to run in the suite"
+                        },
+                        "regions": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "AWS regions to scan. Omit for all regions."
+                        }
+                    },
+                    "required": ["skill_names"]
+                }
+            }
+        }
+    },
+    {
+        "toolSpec": {
             "name": "remediate_finding",
             "description": "Execute a one-click remediation for a specific finding. Requires user confirmation.",
             "inputSchema": {
