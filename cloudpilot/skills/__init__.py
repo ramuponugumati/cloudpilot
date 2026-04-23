@@ -22,4 +22,5 @@ from cloudpilot.skills import (
     drift_detector,
     backup_dr_posture,
     data_security,
+    eks_optimizer,
 )
