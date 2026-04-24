@@ -142,13 +142,18 @@ class NetworkPathTracer(BaseSkill):
             blocked_at=next((h.component_id for h in hops if not h.allowed), ""),
         )
 
+        # --- Generate path diagram ---
+        diagram = self._generate_path_diagram(
+            source, destination, hops, reachable, source_info, dest_info)
+
         if reachable:
             findings.append(Finding(
                 skill=self.name,
                 title=f"Path reachable: {source} → {destination}",
                 severity=Severity.INFO,
                 description=f"Network path from {source} to {destination} is reachable "
-                            f"through {len(hops)} hop(s).",
+                            f"through {len(hops)} hop(s).\n\n"
+                            f"```mermaid\n{diagram}\n```",
                 resource_id=source,
                 account_id=acct,
                 region=region,
@@ -158,6 +163,7 @@ class NetworkPathTracer(BaseSkill):
                     "hop_count": len(hops),
                     "source_vpc": source_info.get("vpc_id", ""),
                     "destination_vpc": dest_info.get("vpc_id", ""),
+                    "diagram": diagram,
                 },
             ))
         else:
@@ -170,7 +176,8 @@ class NetworkPathTracer(BaseSkill):
                 skill=self.name,
                 title=f"Path blocked: {source} → {destination}",
                 severity=Severity.HIGH,
-                description=f"Network path from {source} to {destination} is blocked.{blocked_desc}",
+                description=f"Network path from {source} to {destination} is blocked.{blocked_desc}\n\n"
+                            f"```mermaid\n{diagram}\n```",
                 resource_id=source,
                 account_id=acct,
                 region=region,
@@ -181,6 +188,7 @@ class NetworkPathTracer(BaseSkill):
                     "blocked_at": path_result.blocked_at,
                     "source_vpc": source_info.get("vpc_id", ""),
                     "destination_vpc": dest_info.get("vpc_id", ""),
+                    "diagram": diagram,
                 },
             ))
 
@@ -329,6 +337,61 @@ class NetworkPathTracer(BaseSkill):
         if not hops:
             return False
         return all(hop.allowed for hop in hops)
+
+    def _generate_path_diagram(self, source: str, destination: str,
+                                hops: list[PathHop], reachable: bool,
+                                source_info: dict, dest_info: dict) -> str:
+        """Generate a Mermaid flowchart showing the network path with hop status."""
+        lines = ["graph LR"]
+
+        # Icon map for component types
+        icons = {
+            "subnet": "🔲",
+            "route_table": "🔀",
+            "vpc_peering": "🔗",
+            "nat_gateway": "🚪",
+            "internet_gateway": "🌐",
+            "vpc": "☁️",
+        }
+
+        # Style definitions
+        lines.append("    classDef allowed fill:#d4edda,stroke:#28a745,color:#155724,stroke-width:2px")
+        lines.append("    classDef blocked fill:#f8d7da,stroke:#dc3545,color:#721c24,stroke-width:2px")
+        lines.append("    classDef source fill:#cce5ff,stroke:#004085,color:#004085,stroke-width:2px")
+        lines.append("    classDef dest fill:#e2d5f1,stroke:#6f42c1,color:#6f42c1,stroke-width:2px")
+
+        # Source node
+        src_label = source_info.get("resource_type", "resource").upper()
+        src_vpc = source_info.get("vpc_id", "")
+        lines.append(f'    SRC["{icons.get("subnet", "📍")} {source}<br/>{src_label}<br/>{src_vpc}"]:::source')
+
+        # Hop nodes
+        prev_id = "SRC"
+        for i, hop in enumerate(hops):
+            node_id = f"H{i}"
+            icon = icons.get(hop.component_type, "⚙️")
+            status = "✅" if hop.allowed else "❌"
+            label = f"{icon} {hop.component_type.replace('_', ' ').title()}<br/>{hop.component_id}<br/>{status} {hop.reason}"
+            css_class = "allowed" if hop.allowed else "blocked"
+            lines.append(f'    {node_id}["{label}"]:::{css_class}')
+
+            # Edge
+            arrow = "-->" if hop.allowed else "-.->"
+            lines.append(f"    {prev_id} {arrow} {node_id}")
+            prev_id = node_id
+
+        # Destination node
+        dst_label = dest_info.get("resource_type", "resource").upper()
+        dst_vpc = dest_info.get("vpc_id", "")
+        lines.append(f'    DST["{icons.get("subnet", "📍")} {destination}<br/>{dst_label}<br/>{dst_vpc}"]:::dest')
+
+        # Final edge
+        if reachable:
+            lines.append(f"    {prev_id} --> DST")
+        else:
+            lines.append(f"    {prev_id} -.-> DST")
+
+        return "\n".join(lines)
 
     def _find_route_table(self, subnet_id: str, vpc_id: str,
                           route_tables: list[dict]) -> dict | None:

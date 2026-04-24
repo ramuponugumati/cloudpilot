@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/skills/network_path_tracer.py
+# hypothesis_version: 6.151.9
+
+['-->', '-.->', '0.1.0', 'No local route found', 'SRC', 'VPC (unknown)', 'accepter_vpc_id', 'active', 'allowed', 'blocked', 'blocked_at', 'destination_vpc', 'diagram', 'graph LR', 'hop_count', 'internet_gateway', 'local', 'nat_gateway', 'network-path-tracer', 'none', 'path_result', 'peering_id', 'requester_vpc_id', 'resource', 'resource_type', 'route_table', 'route_table_id', 'routes', 'source_vpc', 'status', 'subnet', 'subnet_associations', 'subnet_id', 'target_type', 'unknown', 'us-east-1', 'vpc', 'vpc-peering', 'vpc_id', 'vpc_peering', '☁️', '⚙️', '✅', '❌', '🌐', '🔀', '🔗', '🔲', '🚪']

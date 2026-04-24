@@ -467,25 +467,29 @@ body {
     display: block;
 }
 .rem-btn {
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    background: transparent;
+    border: none;
+    color: #fff;
+    background: linear-gradient(135deg, #e65100, #ff6d00);
     border-radius: 6px;
-    padding: 5px 12px;
+    padding: 6px 14px;
     font-size: 0.78em;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(230, 81, 0, 0.3);
+    letter-spacing: 0.3px;
 }
 .rem-btn:hover:not(:disabled) {
-    background: var(--accent);
-    color: #fff;
-    transform: scale(1.02);
+    background: linear-gradient(135deg, #bf360c, #e65100);
+    transform: scale(1.05) translateY(-1px);
+    box-shadow: 0 4px 14px rgba(230, 81, 0, 0.45);
 }
 .rem-btn:disabled {
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.5;
+    background: #9ca3af;
+    box-shadow: none;
 }
 .rem-followup {
     margin-top: 10px;

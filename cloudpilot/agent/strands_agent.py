@@ -32,17 +32,21 @@ _state = {
 # --- Tool Functions ---
 
 @tool
-def run_skill(skill_name: str, regions: Optional[list[str]] = None) -> str:
+def run_skill(skill_name: str, regions: Optional[list[str]] = None, **kwargs) -> str:
     """Run a CloudPilot scanning skill against the AWS account.
     Available skills: cost-radar, zombie-hunter, security-posture, capacity-planner,
     event-analysis, resiliency-gaps, tag-enforcer, lifecycle-tracker, health-monitor,
-    quota-guardian, costopt-intelligence, arch-diagram."""
+    quota-guardian, costopt-intelligence, arch-diagram, network-path-tracer,
+    sg-chain-analyzer, connectivity-diagnoser, network-topology, drift-detector,
+    backup-dr-posture, data-security, eks-optimizer, secrets-hygiene,
+    serverless-optimizer, dns-cert-manager, database-optimizer,
+    multi-account-governance, modernization-advisor, blast-radius, shadow-it-detector."""
     skill = SkillRegistry.get(skill_name)
     if not skill:
         return json.dumps({"error": f"Unknown skill: {skill_name}. Available: {SkillRegistry.names()}"})
     scan_regions = regions or get_regions(profile=_state["profile"])
     start = time.time()
-    result = skill.scan(scan_regions, _state["profile"])
+    result = skill.scan(scan_regions, _state["profile"], **kwargs)
     duration = time.time() - start
     findings = [f.to_dict() for f in result.findings]
     _state["findings_store"].extend(findings)
@@ -186,11 +190,143 @@ def list_skills() -> str:
     return json.dumps(skills, indent=2)
 
 
+@tool
+def run_suite(skill_names: list[str], regions: Optional[list[str]] = None) -> str:
+    """Run a suite of CloudPilot skills together.
+    Suites: FinOps (cost-radar, zombie-hunter, costopt-intelligence, database-optimizer),
+    Security (security-posture, data-security, secrets-hygiene, sg-chain-analyzer),
+    Network (network-path-tracer, connectivity-diagnoser, network-topology, dns-cert-manager),
+    Platform (drift-detector, eks-optimizer, serverless-optimizer, arch-diagram, lifecycle-tracker),
+    Resilience (resiliency-gaps, backup-dr-posture, blast-radius, health-monitor, capacity-planner),
+    Governance (tag-enforcer, quota-guardian, multi-account-governance, shadow-it-detector),
+    Modernization (modernization-advisor, event-analysis)."""
+    scan_regions = regions or get_regions(profile=_state["profile"])
+    all_findings = []
+    summaries = []
+    for sn in skill_names:
+        skill = SkillRegistry.get(sn)
+        if not skill:
+            summaries.append({"skill": sn, "error": f"Unknown skill: {sn}"})
+            continue
+        try:
+            start = time.time()
+            result = skill.scan(scan_regions, _state["profile"])
+            duration = time.time() - start
+            findings = [f.to_dict() for f in result.findings]
+            all_findings.extend(findings)
+            if sn not in _state["skills_run"]:
+                _state["skills_run"].append(sn)
+            summaries.append({"skill": sn, "findings": len(findings),
+                              "impact": round(result.total_impact, 2),
+                              "critical": result.critical_count,
+                              "duration": round(duration, 1)})
+        except Exception as e:
+            summaries.append({"skill": sn, "error": str(e)})
+    _state["findings_store"].extend(all_findings)
+    return json.dumps({"suite_skills": skill_names, "total_findings": len(all_findings),
+                        "skills_summary": summaries,
+                        "top_findings": sorted(all_findings, key=lambda f: f.get("monthly_impact", 0), reverse=True)[:10]}, default=str)
+
+
+@tool
+def trace_network_path(source: str, destination: str, regions: Optional[list[str]] = None) -> str:
+    """Trace network connectivity path between two AWS resources.
+    Analyzes route tables, VPC peering, NAT gateways, and internet gateways.
+    Source/destination: EC2 instance ID (i-*), RDS instance ID (db-*), Lambda function name, ECS task ARN, or ELB ARN.
+    Returns findings and a Mermaid diagram of the path — ALWAYS include the diagram in your response."""
+    from cloudpilot.skills.network_path_tracer import NetworkPathTracer
+    scan_regions = regions or get_regions(profile=_state["profile"])
+    skill = NetworkPathTracer()
+    start = time.time()
+    result = skill.scan(scan_regions, _state["profile"], source=source, destination=destination)
+    duration = time.time() - start
+    findings = [f.to_dict() for f in result.findings]
+    _state["findings_store"].extend(findings)
+    if skill.name not in _state["skills_run"]:
+        _state["skills_run"].append(skill.name)
+    # Extract diagram from finding metadata for top-level inclusion
+    diagram = ""
+    for f in result.findings:
+        if f.metadata.get("diagram"):
+            diagram = f.metadata["diagram"]
+            break
+    resp = {"skill": skill.name, "findings_count": len(findings),
+            "findings": findings[:20], "duration_seconds": round(duration, 1),
+            "total_impact": round(result.total_impact, 2),
+            "critical_count": result.critical_count}
+    if diagram:
+        resp["path_diagram"] = f"```mermaid\n{diagram}\n```"
+        resp["IMPORTANT"] = "Include the path_diagram mermaid block in your response so the user sees the visual path."
+    return json.dumps(resp, default=str)
+
+
+@tool
+def diagnose_connectivity(source: str, destination: str, protocol: str = "tcp",
+                          port: int = 443, regions: Optional[list[str]] = None) -> str:
+    """Diagnose why one AWS resource cannot reach another.
+    Checks security groups, NACLs, route tables, VPC peering, NAT gateways, and internet gateways."""
+    from cloudpilot.skills.connectivity_diagnoser import ConnectivityDiagnoser
+    scan_regions = regions or get_regions(profile=_state["profile"])
+    skill = ConnectivityDiagnoser()
+    start = time.time()
+    result = skill.scan(scan_regions, _state["profile"], source=source, destination=destination,
+                        protocol=protocol, port=port)
+    duration = time.time() - start
+    findings = [f.to_dict() for f in result.findings]
+    _state["findings_store"].extend(findings)
+    if skill.name not in _state["skills_run"]:
+        _state["skills_run"].append(skill.name)
+    return json.dumps({"skill": skill.name, "findings_count": len(findings),
+                        "findings": findings[:20], "duration_seconds": round(duration, 1),
+                        "total_impact": round(result.total_impact, 2),
+                        "critical_count": result.critical_count}, default=str)
+
+
+@tool
+def analyze_security_groups(regions: Optional[list[str]] = None) -> str:
+    """Analyze security group rules for overly permissive configurations and trace SG-to-SG reference chains."""
+    from cloudpilot.skills.sg_chain_analyzer import SGChainAnalyzer
+    scan_regions = regions or get_regions(profile=_state["profile"])
+    skill = SGChainAnalyzer()
+    start = time.time()
+    result = skill.scan(scan_regions, _state["profile"])
+    duration = time.time() - start
+    findings = [f.to_dict() for f in result.findings]
+    _state["findings_store"].extend(findings)
+    if skill.name not in _state["skills_run"]:
+        _state["skills_run"].append(skill.name)
+    return json.dumps({"skill": skill.name, "findings_count": len(findings),
+                        "findings": findings[:20], "duration_seconds": round(duration, 1),
+                        "total_impact": round(result.total_impact, 2),
+                        "critical_count": result.critical_count}, default=str)
+
+
+@tool
+def generate_network_topology(regions: Optional[list[str]] = None) -> str:
+    """Generate a Mermaid network topology diagram showing VPC layout, subnets, route tables, NAT/IGW, and peering."""
+    from cloudpilot.skills.network_topology import NetworkTopologyVisualizer
+    scan_regions = regions or get_regions(profile=_state["profile"])
+    skill = NetworkTopologyVisualizer()
+    start = time.time()
+    result = skill.scan(scan_regions, _state["profile"])
+    duration = time.time() - start
+    findings = [f.to_dict() for f in result.findings]
+    _state["findings_store"].extend(findings)
+    if skill.name not in _state["skills_run"]:
+        _state["skills_run"].append(skill.name)
+    return json.dumps({"skill": skill.name, "findings_count": len(findings),
+                        "findings": findings[:20], "duration_seconds": round(duration, 1),
+                        "total_impact": round(result.total_impact, 2),
+                        "critical_count": result.critical_count}, default=str)
+
+
 # All tools
 ALL_TOOLS = [
-    run_skill, run_all_skills, discover_architecture, generate_diagram,
+    run_skill, run_all_skills, run_suite, discover_architecture, generate_diagram,
     generate_iac, remediate_finding, aws_docs_search, aws_blog_search,
     get_findings_summary, list_skills,
+    trace_network_path, diagnose_connectivity, analyze_security_groups,
+    generate_network_topology,
 ]
 
 

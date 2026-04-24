@@ -10,6 +10,7 @@ const Chat = {
     isLoading: false,
     mermaidCounter: 0,
     chartCounter: 0,
+    _history: [],  // {role, content} pairs for persistence
 
     init() {
         this.messagesEl = document.getElementById('chat-messages');
@@ -31,6 +32,42 @@ const Chat = {
         });
 
         mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+
+        // Restore chat history from sessionStorage
+        this._restoreHistory();
+    },
+
+    _saveHistory() {
+        try {
+            sessionStorage.setItem('cloudpilot_chat', JSON.stringify(this._history));
+        } catch (e) { /* quota exceeded — silently ignore */ }
+    },
+
+    _restoreHistory() {
+        try {
+            const saved = sessionStorage.getItem('cloudpilot_chat');
+            if (!saved) return;
+            const items = JSON.parse(saved);
+            if (!Array.isArray(items) || items.length === 0) return;
+            // Remove the default welcome message before replaying
+            this.messagesEl.innerHTML = '';
+            this._history = items;
+            for (const item of items) {
+                this._addMessageDOM(item.role, item.content);
+            }
+            this.scrollToBottom();
+        } catch (e) { /* corrupted data — start fresh */ }
+    },
+
+    _addMessageDOM(role, content) {
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.innerHTML = this.renderContent(content);
+        div.appendChild(contentDiv);
+        this.messagesEl.appendChild(div);
+        this.postRender(contentDiv);
     },
 
     async send() {
@@ -68,15 +105,10 @@ const Chat = {
     },
 
     addMessage(role, content) {
-        const div = document.createElement('div');
-        div.className = `message ${role}`;
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content';
-        contentDiv.innerHTML = this.renderContent(content);
-        div.appendChild(contentDiv);
-        this.messagesEl.appendChild(div);
+        this._history.push({ role, content });
+        this._saveHistory();
+        this._addMessageDOM(role, content);
         this.scrollToBottom();
-        this.postRender(contentDiv);
     },
 
     renderContent(text) {
@@ -475,5 +507,7 @@ const Chat = {
 
     clear() {
         this.messagesEl.innerHTML = '';
+        this._history = [];
+        sessionStorage.removeItem('cloudpilot_chat');
     },
 };

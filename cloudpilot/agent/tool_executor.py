@@ -35,8 +35,10 @@ def execute_tool(
         if not skill:
             return {"error": f"Unknown skill: {skill_name}. Available: {SkillRegistry.names()}"}
         regions = tool_input.get("regions") or get_regions(profile=profile)
+        # Forward any extra kwargs (source, destination, etc.) to the skill
+        extra_kwargs = {k: v for k, v in tool_input.items() if k not in ("skill_name", "regions")}
         start = time.time()
-        result = skill.scan(regions, profile)
+        result = skill.scan(regions, profile, **extra_kwargs)
         duration = time.time() - start
         findings = [f.to_dict() for f in result.findings]
         if findings_store is not None:
@@ -58,12 +60,13 @@ def execute_tool(
 
     elif tool_name == "run_all_skills":
         regions = tool_input.get("regions") or get_regions(profile=profile)
+        extra_kwargs = {k: v for k, v in tool_input.items() if k not in ("regions",)}
         all_findings = []
         summaries = []
         for skill in SkillRegistry.all().values():
             try:
                 start = time.time()
-                result = skill.scan(regions, profile)
+                result = skill.scan(regions, profile, **extra_kwargs)
                 duration = time.time() - start
                 findings = [f.to_dict() for f in result.findings]
                 all_findings.extend(findings)
@@ -89,6 +92,7 @@ def execute_tool(
     elif tool_name == "run_suite":
         skill_names = tool_input.get("skill_names", [])
         regions = tool_input.get("regions") or get_regions(profile=profile)
+        extra_kwargs = {k: v for k, v in tool_input.items() if k not in ("skill_names", "regions")}
         all_findings = []
         summaries = []
         for skill_name in skill_names:
@@ -98,7 +102,7 @@ def execute_tool(
                 continue
             try:
                 start = time.time()
-                result = skill.scan(regions, profile)
+                result = skill.scan(regions, profile, **extra_kwargs)
                 duration = time.time() - start
                 findings = [f.to_dict() for f in result.findings]
                 all_findings.extend(findings)
@@ -243,7 +247,13 @@ def execute_tool(
             findings_store.extend(findings)
         if skills_run is not None and skill.name not in skills_run:
             skills_run.append(skill.name)
-        return {
+        # Extract diagram from finding metadata
+        diagram = ""
+        for f in result.findings:
+            if f.metadata.get("diagram"):
+                diagram = f.metadata["diagram"]
+                break
+        response = {
             "skill": skill.name,
             "findings_count": len(findings),
             "findings": findings[:20],
@@ -251,6 +261,10 @@ def execute_tool(
             "total_impact": round(result.total_impact, 2),
             "critical_count": result.critical_count,
         }
+        if diagram:
+            response["path_diagram"] = f"```mermaid\n{diagram}\n```"
+            response["IMPORTANT"] = "Include the path_diagram mermaid block in your response so the user sees the visual path."
+        return response
 
     elif tool_name == "analyze_security_groups":
         regions = tool_input.get("regions") or get_regions(profile=profile)
