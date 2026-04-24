@@ -320,6 +320,66 @@ cloudpilot skills                             # List all skills
 | Memory (AgentCore) | `bedrock:*AgentMemory*` |
 | Cost Radar | `ce:GetCostAndUsage` |
 
+## Cost to Run CloudPilot
+
+CloudPilot itself is open-source and free. The cost comes from the AWS services it uses. Here's a realistic breakdown for a typical single-account deployment.
+
+### Per-Conversation Costs (Bedrock Claude)
+
+| Usage Pattern | Input Tokens | Output Tokens | Est. Cost per Chat Turn |
+|---------------|-------------|---------------|------------------------|
+| Simple question (no scan) | ~1,500 | ~500 | ~$0.01 |
+| Single skill scan | ~3,000 | ~2,000 | ~$0.02 |
+| Suite scan (4-5 skills) | ~8,000 | ~4,000 | ~$0.05 |
+| Architecture discovery + diagram | ~10,000 | ~5,000 | ~$0.06 |
+| IaC generation | ~12,000 | ~8,000 | ~$0.08 |
+
+*Based on Claude Sonnet pricing: $3/M input tokens, $15/M output tokens (us-east-1, April 2025).*
+
+### Monthly Cost Estimates by Usage Tier
+
+| Component | Light Use (5 chats/day) | Moderate (20 chats/day) | Heavy (50 chats/day) |
+|-----------|------------------------|------------------------|---------------------|
+| **Bedrock (Claude Sonnet)** | ~$3-5 | ~$12-20 | ~$30-50 |
+| **AWS API calls** (read-only) | $0 (free tier) | $0-2 | $2-5 |
+| **Cost Explorer API** | ~$0.01/request | ~$0.30 | ~$1.00 |
+| **AgentCore Memory** | ~$0 (free tier) | ~$0-1 | ~$1-2 |
+| **EC2/Fargate** (if hosted) | $0 (local) | ~$15-30 | ~$15-30 |
+| **Total (local deployment)** | **~$3-5/mo** | **~$12-23/mo** | **~$33-58/mo** |
+| **Total (hosted on EC2)** | **~$18-35/mo** | **~$27-53/mo** | **~$48-88/mo** |
+
+### What's Free
+
+- All 28 scanning skills use **read-only AWS API calls** — most fall within free tier (describe/list/get)
+- Running locally on your laptop — no compute cost
+- MCP server mode — no additional cost beyond Bedrock
+- Dashboard UI — static files served locally
+
+### What Costs Money
+
+- **Amazon Bedrock** — the primary cost driver. Each chat turn invokes Claude Sonnet. Longer conversations with tool use cost more tokens.
+- **Cost Explorer API** — $0.01 per `GetCostAndUsage` request (cost-radar skill)
+- **Hosting** (optional) — EC2 t3.small (~$15/mo) or Fargate if you want a shared team server
+- **AgentCore Memory** (optional) — minimal cost for session persistence
+
+### Cost Optimization Tips
+
+- Use `CLOUDPILOT_MODEL` env var to switch to Claude Haiku for cheaper, faster responses on routine scans
+- Run suites instead of individual skills to batch API calls
+- Use the CLI for one-off scans (no persistent server cost)
+- Local deployment = Bedrock-only cost, no infrastructure overhead
+
+### Comparison to Alternatives
+
+| Solution | Monthly Cost | Coverage |
+|----------|-------------|----------|
+| **CloudPilot (local)** | **$5-50** | 28 skills, conversational, IaC gen, remediation |
+| AWS Trusted Advisor (Business Support) | $100+ (support plan) | ~50 checks, no conversation |
+| Third-party CSPM (Prisma, Wiz) | $5,000-50,000+ | Security-focused, no IaC gen |
+| Manual SA review | $10,000+ (time cost) | One-time, no automation |
+
+---
+
 ## Testing
 
 ```bash
