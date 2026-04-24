@@ -282,5 +282,83 @@ def list_skills():
     console.print(table)
 
 
+@cli.command("monitor")
+@click.pass_context
+@click.option("--suite", "-s", multiple=True, help="Suites to schedule (default: all)")
+@click.option("--interval", "-i", type=int, default=None, help="Override interval in hours for all suites")
+@click.option("--run-now", is_flag=True, help="Run all scheduled suites immediately before starting scheduler")
+def monitor_cmd(ctx, suite, interval, run_now):
+    """Start continuous monitoring — scheduled scans with notifications."""
+    from cloudpilot.monitoring.scheduler import ScanScheduler, SUITES, DEFAULT_SCHEDULES
+    from cloudpilot.monitoring.notifications import NotificationConfig
+
+    profile = ctx.obj.get("profile")
+    notify_config = NotificationConfig.from_env()
+
+    # Build schedule config
+    if suite:
+        schedules = {s: DEFAULT_SCHEDULES.get(s, {"interval_hours": 24}) for s in suite if s in SUITES}
+        if not schedules:
+            console.print(f"[red]No valid suites. Available: {list(SUITES.keys())}[/red]")
+            return
+    else:
+        schedules = dict(DEFAULT_SCHEDULES)
+
+    if interval:
+        schedules = {name: {"interval_hours": interval} for name in schedules}
+
+    console.print(f"\n☁️✈️ [bold cyan]CloudPilot Continuous Monitoring[/bold cyan]\n")
+    console.print(f"Profile: [green]{profile or 'default'}[/green]")
+    console.print(f"Suites:  [cyan]{', '.join(schedules.keys())}[/cyan]")
+
+    # Show notification config
+    channels = []
+    if notify_config.slack_webhook_url:
+        channels.append("Slack")
+    if notify_config.teams_webhook_url:
+        channels.append("Teams")
+    if notify_config.sns_topic_arn:
+        channels.append("SNS")
+    if notify_config.generic_webhook_url:
+        channels.append("Webhook")
+    console.print(f"Notify:  [yellow]{', '.join(channels) or 'None configured'}[/yellow]")
+    console.print(f"Threshold: [yellow]{notify_config.min_severity}+ severity[/yellow]\n")
+
+    table = Table(title="Schedule", box=box.ROUNDED)
+    table.add_column("Suite", style="cyan")
+    table.add_column("Interval")
+    table.add_column("Skills")
+    for name, sched in schedules.items():
+        hrs = sched.get("interval_hours", 24)
+        skills = SUITES.get(name, [])
+        table.add_row(name, f"Every {hrs}h", ", ".join(skills))
+    console.print(table)
+
+    scheduler = ScanScheduler(profile=profile, schedules=schedules)
+
+    if run_now:
+        console.print("\n[bold]Running initial scans...[/bold]")
+        for suite_name in schedules:
+            console.print(f"  ▶ {suite_name}...", end=" ")
+            result = scheduler.run_now(suite_name)
+            findings = result.get("total_findings", 0)
+            critical = result.get("critical_count", 0)
+            dur = result.get("duration_seconds", 0)
+            color = "red" if critical > 0 else "green"
+            console.print(f"[{color}]{findings} findings ({critical} critical) in {dur}s[/{color}]")
+
+    console.print("\n[bold green]Starting scheduler...[/bold green] (Ctrl+C to stop)\n")
+    scheduler.start()
+
+    try:
+        import time
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Stopping scheduler...[/yellow]")
+        scheduler.stop()
+        console.print("[green]Scheduler stopped.[/green]")
+
+
 if __name__ == "__main__":
     cli()

@@ -117,12 +117,64 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Quick action buttons
-    document.querySelectorAll('.action-btn').forEach(btn => {
+    // Quick action buttons (skip monitoring buttons which have their own handlers)
+    document.querySelectorAll('.action-btn[data-action]').forEach(btn => {
         btn.addEventListener('click', () => {
             Chat.sendQuickAction(btn.dataset.action);
         });
     });
+
+    // Monitoring buttons
+    const historyBtn = document.getElementById('btn-history');
+    if (historyBtn) {
+        historyBtn.addEventListener('click', async () => {
+            try {
+                const records = await API._fetch('/api/monitoring/history?limit=20');
+                if (!records || records.length === 0) {
+                    Chat.addMessage('assistant', 'No scan history yet. Run a suite scan first, or start the scheduler with `cloudpilot monitor`.');
+                    return;
+                }
+                let md = '**📊 Scan History** (last 20 runs)\n\n';
+                const sevEmoji = {critical:'🔴',high:'🟠',medium:'🟡',low:'🔵',info:'⚪'};
+                for (const r of records) {
+                    const ts = new Date(r.timestamp).toLocaleString();
+                    const sev = [];
+                    if (r.critical_count) sev.push(`🔴${r.critical_count}`);
+                    if (r.high_count) sev.push(`🟠${r.high_count}`);
+                    if (r.medium_count) sev.push(`🟡${r.medium_count}`);
+                    const sevStr = sev.length ? sev.join(' ') : '✅ clean';
+                    const impact = r.total_impact > 0 ? ` · $${r.total_impact.toFixed(2)}/mo` : '';
+                    md += `• **${r.suite}** (${r.trigger}) — ${r.total_findings} findings ${sevStr}${impact} — ${ts} *(${r.duration_seconds}s)*\n`;
+                }
+                Chat.addMessage('assistant', md);
+            } catch (e) {
+                Chat.addMessage('assistant', `⚠️ Could not load history: ${e.message}`);
+            }
+        });
+    }
+
+    const schedulerBtn = document.getElementById('btn-scheduler');
+    if (schedulerBtn) {
+        schedulerBtn.addEventListener('click', async () => {
+            try {
+                const status = await API._fetch('/api/monitoring/scheduler');
+                let md = '**⏰ Scheduler Status**\n\n';
+                md += `Running: **${status.running ? '✅ Yes' : '❌ No'}**\n`;
+                md += `History records: **${status.history_count}**\n\n`;
+                if (Object.keys(status.schedules).length > 0) {
+                    md += '| Suite | Interval |\n|-------|----------|\n';
+                    for (const [name, sched] of Object.entries(status.schedules)) {
+                        md += `| ${name} | Every ${sched.interval_hours}h |\n`;
+                    }
+                } else {
+                    md += 'No schedules configured. Start with `cloudpilot monitor` CLI command.';
+                }
+                Chat.addMessage('assistant', md);
+            } catch (e) {
+                Chat.addMessage('assistant', `⚠️ Could not load scheduler status: ${e.message}`);
+            }
+        });
+    }
 
     // Health check
     try {

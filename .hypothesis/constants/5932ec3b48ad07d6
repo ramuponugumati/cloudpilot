@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/monitoring/notifications.py
+# hypothesis_version: 6.151.9
+
+[100, 300, ' | ', '*Top Findings:*\n', '059669', ':', '@type', 'CLOUDPILOT_SNS_TOPIC', 'Clean', 'Content-Type', 'Duration', 'Findings', 'Impact', 'MessageCard', 'NotificationConfig', 'POST', 'Severity', 'Slack', 'Teams', 'Trigger', 'application/json', 'blocks', 'critical', 'critical_count', 'dc2626', 'duration', 'facts', 'fields', 'header', 'high', 'high_count', 'impact', 'info', 'low', 'medium', 'mrkdwn', 'name', 'plain_text', 'scan_id', 'section', 'sections', 'severity', 'severity_line', 'slack', 'sns', 'suite', 'summary', 'teams', 'text', 'themeColor', 'timestamp', 'title', 'top_findings', 'total_findings', 'trigger', 'true', 'type', 'us-east-1', 'utf-8', 'value', 'webhook', '—', '⚪', '🔴', '🔵', '🟠', '🟡']

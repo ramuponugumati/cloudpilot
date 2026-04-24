@@ -1,0 +1,4 @@
+# file: /Users/ramuponu/sfwork-genai/cloudpilot/cloudpilot/monitoring/history.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, 500, '.cloudpilot/history', 'critical', 'critical_count', 'critical_counts', 'findings', 'high', 'high_count', 'high_counts', 'index.json', 'info', 'low', 'manual', 'medium', 'monthly_impact', 'period_days', 'scan_count', 'severity', 'suite', 'suites', 'timestamp', 'timestamps', 'total_findings', 'total_impact', 'total_impacts']

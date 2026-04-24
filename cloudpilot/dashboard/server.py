@@ -339,4 +339,70 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
                       "critical_count": r.critical_count, "metadata": r.metadata} for r in job.results]
         return []
 
+    # --- Monitoring / History ---
+    from cloudpilot.monitoring.history import ScanHistoryStore
+    from cloudpilot.monitoring.scheduler import ScanScheduler, SUITES, run_suite_scan
+    from cloudpilot.monitoring.notifications import NotificationConfig
+
+    history_store = ScanHistoryStore()
+    app.state.scheduler = None
+
+    @app.get("/api/monitoring/history")
+    async def get_scan_history(limit: int = 50, suite: str = None):
+        return history_store.list_records(limit=limit, suite=suite)
+
+    @app.get("/api/monitoring/history/{record_id}")
+    async def get_scan_record(record_id: str):
+        record = history_store.get_record(record_id)
+        if not record:
+            raise HTTPException(status_code=404, detail=f"Scan record not found: {record_id}")
+        return record.to_dict()
+
+    @app.get("/api/monitoring/trends")
+    async def get_scan_trends(days: int = 30, suite: str = None):
+        return history_store.get_trends(days=days, suite=suite)
+
+    @app.post("/api/monitoring/scan/{suite_name}")
+    async def trigger_suite_scan(suite_name: str):
+        if suite_name not in SUITES:
+            raise HTTPException(status_code=400, detail=f"Unknown suite: {suite_name}. Available: {list(SUITES.keys())}")
+        p = app.state.profile
+        regions = get_regions(profile=p)
+        notify_config = NotificationConfig.from_env()
+
+        async def _run():
+            return await asyncio.to_thread(
+                run_suite_scan, suite_name, SUITES[suite_name], regions, p,
+                history_store, notify_config, "manual",
+            )
+        result = await _run()
+        return result
+
+    @app.get("/api/monitoring/scheduler")
+    async def get_scheduler_status():
+        if app.state.scheduler:
+            return app.state.scheduler.get_status()
+        return {"running": False, "schedules": {}, "active_timers": [], "history_count": len(history_store.list_records(limit=1000))}
+
+    @app.post("/api/monitoring/scheduler/start")
+    async def start_scheduler():
+        if app.state.scheduler and app.state.scheduler._running:
+            return {"status": "already_running"}
+        p = app.state.profile
+        scheduler = ScanScheduler(profile=p)
+        app.state.scheduler = scheduler
+        await asyncio.to_thread(scheduler.start)
+        return {"status": "started", **scheduler.get_status()}
+
+    @app.post("/api/monitoring/scheduler/stop")
+    async def stop_scheduler():
+        if app.state.scheduler:
+            app.state.scheduler.stop()
+            return {"status": "stopped"}
+        return {"status": "not_running"}
+
+    @app.get("/api/monitoring/suites")
+    async def list_suites():
+        return {name: skills for name, skills in SUITES.items()}
+
     return app
