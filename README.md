@@ -1,25 +1,88 @@
 # ☁️✈️ CloudPilot — AWS Infrastructure Intelligence Platform
 
-AI-powered conversational agent that discovers, visualizes, scans, and codifies your AWS infrastructure. Chat with it in your browser — it sees your real resources, generates architecture diagrams, finds security risks and cost waste, and produces Infrastructure as Code.
+**The AI co-pilot that sees, understands, and optimizes your entire AWS estate.**
 
-## What It Does
+CloudPilot is an AI-powered conversational agent that combines the depth of a senior AWS Solutions Architect with real-time infrastructure scanning across 28 specialized skills. It discovers your resources, visualizes your architecture, finds security risks and cost waste, traces network paths, detects infrastructure drift, scores your DR readiness — and fixes what it finds with one-click remediation.
 
-**The Infrastructure Intelligence Loop:**
+Chat with it in your browser. Point it at any AWS account. Get answers in seconds.
+
+---
+
+## The Problem
+
+AWS environments grow fast. Teams accumulate hundreds of resources across dozens of regions — and lose visibility. The result:
+
+- **Cost waste** — Zombie resources, oversized instances, unused reservations bleeding money every month
+- **Security blind spots** — Open ports, public buckets, stale IAM keys, unencrypted databases hiding in plain sight
+- **Resilience gaps** — Single-AZ databases, missing backups, no DR plan, untested recovery
+- **Operational drift** — Infrastructure diverging from IaC definitions, compliance policies violated silently
+- **Network complexity** — "Why can't service A reach service B?" takes hours of console clicking
+
+Existing tools give you dashboards full of data. CloudPilot gives you a **conversation** — ask a question, get an answer, fix the problem.
+
+## The Solution
 
 ```
-DISCOVER → VISUALIZE → ANALYZE → TROUBLESHOOT → GENERATE (IaC)
-    ↑                                                    |
-    └────────────────────────────────────────────────────┘
+    ASK  →  DISCOVER  →  ANALYZE  →  VISUALIZE  →  FIX
+     ↑                                               |
+     └────────────────────────────────────────────────┘
 ```
 
-- **Discover** — Scans all AWS resources across all regions, builds complete inventory
-- **Visualize** — Generates interactive Mermaid architecture diagrams from live infrastructure
-- **Analyze** — 12 scanning skills find security risks, cost waste, zombie resources, resiliency gaps
-- **Generate IaC** — Produces CDK Python, CloudFormation YAML, or Terraform HCL from discovered resources
-- **Fix** — 18 one-click remediation actions with confirmation
-- **Remember** — Persistent memory across sessions via Bedrock AgentCore
+CloudPilot wraps 28 scanning skills, architecture discovery, IaC generation, and one-click remediation behind a natural language interface powered by Amazon Bedrock (Claude). It's a full AWS Solutions Architect that never sleeps, never forgets, and can inspect your live infrastructure in real time.
 
-## Quick Start
+---
+
+## 28 Scanning Skills Across 7 Suites
+
+| Suite | Skills | What It Finds |
+|-------|--------|---------------|
+| 💰 **FinOps** | cost-radar, zombie-hunter, costopt-intelligence, database-optimizer | Spend anomalies, idle EC2/RDS, unattached EBS, unused EIPs/NATs, RI/SP gaps, oversized databases |
+| 🛡️ **Security** | security-posture, data-security, secrets-hygiene, sg-chain-analyzer | Open ports, public S3, stale IAM keys, unencrypted data, Macie findings, secret rotation gaps, SG chains |
+| 🌐 **Network** | network-path-tracer, connectivity-diagnoser, network-topology, dns-cert-manager | VPC path reachability, blocked routes, SG/NACL conflicts, topology diagrams, expiring certs, DNS issues |
+| 🏗️ **Platform** | drift-detector, eks-optimizer, serverless-optimizer, arch-diagram, lifecycle-tracker | CFN/Terraform drift, EKS version gaps, Lambda cold starts, deprecated runtimes, EOL engines |
+| 🔄 **Resilience** | resiliency-gaps, backup-dr-posture, blast-radius, health-monitor, capacity-planner | DR readiness score (0-100), unprotected resources, single-AZ databases, missing backups, blast radius |
+| 🏢 **Governance** | tag-enforcer, quota-guardian, multi-account-governance, shadow-it-detector | Untagged resources, quota limits, SCP gaps, shadow IT resources outside governance |
+| 🚀 **Modernization** | modernization-advisor, event-analysis | Graviton migration candidates, managed service replacements, CloudTrail risk events |
+
+## Key Capabilities
+
+### Conversational Intelligence
+Ask anything about AWS — architecture design, service comparisons, best practices, or your live infrastructure:
+- *"Why can't my Lambda reach my RDS?"*
+- *"What's wasting money in us-east-1?"*
+- *"Show me my architecture as a diagram"*
+- *"Score my DR readiness"*
+- *"Generate Terraform for my VPC setup"*
+
+### Architecture Discovery & Visualization
+Discovers EC2, RDS, Lambda, S3, ECS, VPC, DynamoDB, SQS, SNS, API Gateway, CloudFront, ELB across all regions. Generates interactive Mermaid diagrams with 5 view types: default, security, cost, multi-region, traffic-flow.
+
+### Network Path Tracing with Visual Diagrams
+Traces connectivity between any two resources (EC2, RDS, Lambda, ECS, ELB) through route tables, VPC peering, NAT gateways, and internet gateways. Generates a color-coded Mermaid flowchart showing each hop — green for allowed, red for blocked.
+
+### Infrastructure Drift Detection
+Detects drift across 4 dimensions: CloudFormation stack drift, Terraform state drift, configuration baseline drift, and compliance policy violations. Supports custom policies with 7 operators.
+
+### DR Readiness Scoring
+Weighted composite score (0-100) across 5 dimensions: backup coverage (30%), cross-region replication (25%), frequency (15%), retention (15%), and PITR (15%). Identifies the weakest dimensions and unprotected resources.
+
+### IaC Generation
+Produces CDK Python, CloudFormation YAML, or Terraform HCL from discovered resources — with inline comments, proper variable extraction, and scope filtering.
+
+### One-Click Remediation
+18 remediation actions with confirmation: delete orphaned volumes, release unused EIPs, restrict open security groups, enable Multi-AZ, enable backups, apply tags, upgrade deprecated runtimes, and more.
+
+### Persistent Memory
+Powered by Bedrock AgentCore — the agent remembers your infrastructure context, past scans, and remediation history across sessions.
+
+---
+
+## Deployment Options
+
+CloudPilot is designed to meet customers where they are — from a developer's laptop to a fully managed cloud deployment.
+
+### 1. Local Developer Workstation
+The fastest path to value. Install, point at your AWS profile, start chatting.
 
 ```bash
 git clone https://github.com/ramuponugumati/cloudpilot.git
@@ -27,104 +90,201 @@ cd cloudpilot
 pip install -e .
 cloudpilot --profile your-profile dashboard
 ```
+Opens http://127.0.0.1:8080. Ideal for individual developers, SA demos, and proof-of-concept.
 
-Opens http://127.0.0.1:8080 — start chatting with your infrastructure.
+### 2. Docker Deployment
+Containerized for team environments. Mounts AWS credentials read-only.
+
+```bash
+docker-compose up
+```
+Runs behind API key authentication, rate limiting, and security headers. Suitable for shared team servers or EC2 instances.
+
+### 3. MCP Server Integration
+Expose CloudPilot as a Model Context Protocol (MCP) tool server — plug it into Kiro, Claude Desktop, Amazon Q Developer, or any MCP-compatible client.
+
+```bash
+# stdio transport (local IDE integration)
+cloudpilot mcp
+
+# SSE transport (remote clients)
+cloudpilot mcp --transport sse --port 8081
+```
+
+**MCP config for Kiro / Claude Desktop:**
+```json
+{
+  "mcpServers": {
+    "cloudpilot": {
+      "command": "cloudpilot",
+      "args": ["mcp", "--profile", "your-profile"]
+    }
+  }
+}
+```
+
+This turns CloudPilot into a tool that any AI agent can call — scan infrastructure, trace network paths, generate IaC, all from within your IDE.
+
+### 4. DevOps Agent Integration
+CloudPilot's skills can be embedded into CI/CD pipelines and DevOps automation:
+
+```python
+from cloudpilot.core import SkillRegistry
+from cloudpilot.aws_client import get_regions
+import cloudpilot.skills  # auto-register all 28 skills
+
+# Run security scan in CI pipeline
+skill = SkillRegistry.get("security-posture")
+result = skill.scan(regions=["us-east-1"], profile="ci-readonly")
+
+# Fail the pipeline if critical findings exist
+if result.critical_count > 0:
+    print(f"BLOCKED: {result.critical_count} critical security findings")
+    for f in result.findings:
+        if f.severity.value == "critical":
+            print(f"  - {f.title}: {f.description}")
+    exit(1)
+```
+
+Use cases:
+- **Pre-deploy gate** — Block deployments with critical security findings
+- **Post-deploy validation** — Verify drift detection after CloudFormation/Terraform apply
+- **Scheduled scans** — EventBridge-triggered Lambda running nightly cost/security sweeps
+- **Slack/Teams bot** — Wrap the agent in a webhook handler for ChatOps
+
+### 5. Bedrock AgentCore Runtime
+Deploy as a managed agent on AWS with persistent memory, session management, and auto-scaling:
+
+```bash
+agentcore deploy --entry-point agent.py
+```
+
+This gives you a fully managed endpoint with built-in memory, guardrails, and observability — ideal for production multi-tenant deployments.
+
+### 6. Standalone API Server
+Run the FastAPI dashboard server as a standalone API for custom frontends or integrations:
+
+```bash
+CLOUDPILOT_API_KEY=your-key cloudpilot --profile prod-readonly dashboard --host 0.0.0.0 --port 8080
+```
+
+API endpoints: `/api/chat`, `/api/scan/{skill}`, `/api/discover`, `/api/diagram`, `/api/iac`, `/api/remediate`
+
+---
+
+## Customer Value Proposition
+
+### For Platform Engineering Teams
+- **Instant visibility** across multi-account, multi-region AWS estates
+- **Automated compliance** — continuous drift detection and policy enforcement
+- **Self-service infrastructure intelligence** — developers ask questions instead of filing tickets
+
+### For FinOps Teams
+- **Cost waste identification** — zombie resources, oversized instances, unused reservations
+- **Spend anomaly detection** — week-over-week spikes, new service alerts
+- **Optimization recommendations** — Graviton migration, Savings Plans, rightsizing
+
+### For Security Teams
+- **CSPM in a conversation** — 25+ security checks across IAM, S3, EC2, RDS, VPC
+- **Data classification** — Macie integration, encryption audit, cross-account access detection
+- **Secrets hygiene** — rotation enforcement, unused secret detection, SSM parameter audit
+
+### For SRE / Operations Teams
+- **DR readiness scoring** — weighted composite score with actionable improvement plan
+- **Network troubleshooting** — "Why can't A reach B?" answered in seconds with visual path diagram
+- **Blast radius analysis** — understand the impact before making changes
+
+### For Solutions Architects
+- **Live architecture diagrams** — generated from real resources, not hand-drawn
+- **IaC reverse engineering** — CDK/CFN/Terraform from existing infrastructure
+- **Well-Architected alignment** — findings mapped to the 6 pillars
+
+---
+
+## Architecture
+
+Built on **Strands Agents SDK** with **Amazon Bedrock** (Claude) and **AgentCore** for memory.
+
+```mermaid
+graph LR
+    subgraph Interfaces
+        CLI[CLI]
+        DASH[Dashboard]
+        MCP[MCP Server]
+        API[REST API]
+    end
+
+    subgraph Core
+        GUARD[Guardrails & Security]
+        AGENT[Strands Agent<br/>Bedrock Claude]
+        MEM[AgentCore Memory]
+    end
+
+    subgraph Capabilities
+        TOOLS[15 @tool Functions]
+        SKILLS[28 Scanning Skills<br/>7 Suites]
+        SEARCH[AWS Docs & Blog Search]
+        DIAG[Diagram Generation]
+        IAC[IaC Generation]
+        REMED[18 Remediation Actions]
+    end
+
+    AWS[AWS APIs<br/>boto3 read-only<br/>parallel multi-region]
+
+    CLI --> AGENT
+    DASH --> GUARD --> AGENT
+    MCP --> AGENT
+    API --> GUARD
+    AGENT --> MEM
+    AGENT --> TOOLS
+    TOOLS --> SKILLS
+    TOOLS --> SEARCH
+    TOOLS --> DIAG
+    TOOLS --> IAC
+    TOOLS --> REMED
+    SKILLS --> AWS
+    AGENT -->|Bedrock| AWS
+```
+
+---
+
+## Quick Start
+
+```bash
+# Clone and install
+git clone https://github.com/ramuponugumati/cloudpilot.git
+cd cloudpilot
+pip install -e .
+
+# Launch dashboard
+cloudpilot --profile your-profile dashboard
+
+# Or use CLI chat
+cloudpilot --profile your-profile chat
+
+# Or start MCP server
+cloudpilot mcp
+```
 
 ## Prerequisites
 
 - Python 3.10+ (tested on 3.13)
-- AWS credentials configured (`aws configure` or profile)
+- AWS credentials configured (`aws configure` or named profile)
 - Amazon Bedrock model access (Claude Sonnet) enabled in your account
 - `pip install -e .` handles all Python dependencies
 
-## Features
-
-### Browser-Based Chat Agent
-Natural language interface to your AWS infrastructure:
-- *"Show me my production architecture"*
-- *"What's wasting money in us-east-1?"*
-- *"Generate Terraform for my VPC setup"*
-- *"Find security issues"*
-- *"What AWS service should I use for async message processing?"*
-
-### 12 Scanning Skills
-| Skill | Description |
-|-------|-------------|
-| 📡 cost-radar | 3-month spend overview, anomaly detection, WoW spikes, new service alerts, top-5 bar chart |
-| 🧟 zombie-hunter | Idle EC2, unattached EBS, unused EIPs/NATs |
-| 🛡️ security-posture | GuardDuty, Security Hub, open ports, public S3, old IAM keys |
-| 📊 capacity-planner | ODCR utilization, SageMaker capacity, EC2 quotas |
-| 🔍 event-analysis | CloudTrail high-risk events, Config compliance, root usage |
-| 🏗️ resiliency-gaps | All 6 Well-Architected pillars |
-| 🏷️ tag-enforcer | Find untagged EC2, RDS, S3, Lambda — auto-apply tags |
-| ⏳ lifecycle-tracker | Deprecated Lambda runtimes, EOL RDS engines |
-| 🏥 health-monitor | AWS Health events, Trusted Advisor checks |
-| 📏 quota-guardian | Service quotas approaching limits |
-| 💡 costopt-intelligence | Savings Plans, RI utilization, rightsizing, EBS optimization |
-| 🗺️ arch-diagram | Resource discovery + architecture diagram generation |
-
-### Architecture Mapping
-- Discovers EC2, RDS, Lambda, S3, ECS, VPC, DynamoDB, SQS, SNS, API Gateway, CloudFront, ELB
-- Detects anti-patterns (single-AZ RDS, public databases, open security groups, missing backups)
-- Recommends managed service alternatives for self-managed EC2 workloads
-- Generates Mermaid diagrams rendered inline in the browser
-
-### IaC Generation
-
-### Cost Overview Dashboard
-The cost-radar skill automatically pulls 3 months of spend data from AWS Cost Explorer and generates:
-- Total spend and average monthly cost (like Cost Explorer's overview)
-- Top 5 services by spend with per-service monthly breakdown
-- Mermaid bar chart rendered inline in the browser showing month-over-month trends
-- Sum and average aggregates across the 3-month window
-
-Try it: *"Run cost-radar scan"* or `cloudpilot scan cost-radar`
-
-### IaC Generation
-- **CDK Python** — AWS CDK v2 constructs
-- **CloudFormation YAML** — Standard CFN templates
-- **Terraform HCL** — With provider config and variables
-- Scope filtering by service or resource ID
-- Inline comments explaining each resource
-
-### 18 One-Click Remediation Actions
-Delete orphaned volumes, release unused EIPs, restrict open security groups, enable Multi-AZ, enable backups, apply tags, upgrade deprecated runtimes, and more.
-
-### MCP Server
-Expose CloudPilot as MCP tools for Kiro, Claude Desktop, or any MCP client:
-```bash
-cloudpilot mcp
-```
-
-### Persistent Memory
-Powered by Bedrock AgentCore — the agent remembers your infrastructure context across sessions.
-
-## CLI Usage
+## CLI Reference
 
 ```bash
-# Launch browser dashboard
-cloudpilot --profile my-profile dashboard
-
-# Interactive chat in terminal
-cloudpilot --profile my-profile chat
-
-# Run all scanning skills
-cloudpilot --profile my-profile scan --all
-
-# Run specific skill
-cloudpilot --profile my-profile scan zombie-hunter
-
-# Discover resources and generate diagram
-cloudpilot --profile my-profile discover
-
-# Generate IaC
+cloudpilot --profile my-profile dashboard     # Browser dashboard
+cloudpilot --profile my-profile chat          # Terminal chat
+cloudpilot --profile my-profile scan --all    # Run all 28 skills
+cloudpilot --profile my-profile scan zombie-hunter  # Single skill
+cloudpilot --profile my-profile discover      # Architecture discovery
 cloudpilot --profile my-profile iac --format terraform --output infra/
-
-# Start MCP server
-cloudpilot mcp
-
-# List skills
-cloudpilot skills
+cloudpilot mcp                                # MCP server (stdio)
+cloudpilot mcp --transport sse --port 8081    # MCP server (SSE)
+cloudpilot skills                             # List all skills
 ```
 
 ## Configuration
@@ -137,74 +297,50 @@ cloudpilot skills
 | `CLOUDPILOT_MODEL` | `us.anthropic.claude-sonnet-4-20250514-v1:0` | Bedrock model ID |
 | `CLOUDPILOT_BEDROCK_REGION` | `us-east-1` | Bedrock region |
 | `CLOUDPILOT_MEMORY_REGION` | `us-east-1` | AgentCore Memory region |
+| `CLOUDPILOT_AGENT` | _(strands)_ | Set to `legacy` for raw Bedrock Converse |
 
 ## Security
 
 - API key authentication (auto-generated for non-localhost)
 - Rate limiting (60 req/min, 15 burst)
-- Security headers (CSP, X-Frame-Options, etc.)
+- Security headers (CSP, X-Frame-Options, HSTS)
 - Prompt injection protection
 - Topic boundary enforcement
-- Output sanitization (redacts AWS credentials)
-- Audit logging
+- Output sanitization (redacts AWS credentials from responses)
+- Audit logging to `cloudpilot_audit.log`
+- All AWS API calls are **read-only** (describe/list/get) — remediation requires explicit confirmation
 
 ## AWS Permissions
 
-**Scanning:** `ReadOnlyAccess` managed policy covers most skills.
+| Use Case | Required Policy |
+|----------|----------------|
+| Scanning (all 28 skills) | `ReadOnlyAccess` managed policy |
+| Remediation | Additional write: `ec2`, `rds`, `s3`, `iam`, `lambda` |
+| Agent (Bedrock) | `bedrock:InvokeModel` |
+| Memory (AgentCore) | `bedrock:*AgentMemory*` |
+| Cost Radar | `ce:GetCostAndUsage` |
 
-**Remediation:** Additional write permissions for ec2, rds, s3, iam, lambda.
+## Testing
 
-**Agent:** `bedrock:InvokeModel` for chat and IaC generation.
-
-## Architecture
-
-Built on **Strands Agents SDK** with **Bedrock AgentCore** for memory and runtime.
-
-```mermaid
-graph LR
-    subgraph Interfaces
-        CLI[CLI]
-        DASH[Dashboard]
-        MCP[MCP Server]
-    end
-
-    subgraph Core
-        GUARD[Guardrails & Security]
-        AGENT[Strands Agent<br/>Bedrock Claude]
-        MEM[AgentCore Memory]
-    end
-
-    subgraph Capabilities
-        TOOLS[10 @tool Functions]
-        SKILLS[12 Scanning Skills]
-        SEARCH[AWS Docs & Blog Search]
-    end
-
-    AWS[AWS APIs<br/>boto3 parallel]
-
-    CLI --> AGENT
-    DASH --> GUARD --> AGENT
-    MCP --> AGENT
-    AGENT --> MEM
-    AGENT --> TOOLS
-    TOOLS --> SKILLS
-    TOOLS --> SEARCH
-    SKILLS --> AWS
-    AGENT -->|Bedrock| AWS
+```bash
+pip install -e ".[dev]"
+pytest tests/ -v    # 122 tests (unit + property-based with Hypothesis)
 ```
 
-**Deployment options:**
-- `pip install cloudpilot && cloudpilot --profile my-profile dashboard`
-- `docker-compose up` (mounts ~/.aws read-only)
-- `cloudpilot mcp --transport sse` (remote MCP clients)
-- `agentcore deploy --entry-point agent.py` (AgentCore Runtime)
+Property-based tests cover: network path tracing (18 properties), drift detection (14 properties), backup/DR posture, secrets hygiene, EKS optimization, and tool executor dispatch.
+
+---
 
 ## Roadmap
 
-- **Phase 1** ✅ Foundation — Agent, Discovery, Diagrams, IaC, Dashboard, MCP
-- **Phase 2** 🔜 Network Intelligence — Path tracing, connectivity diagnosis, SG chain analysis
-- **Phase 3** 🔜 Drift Detection — IaC drift, config drift, baseline compliance
-- **Phase 4** 🔜 Continuous Monitoring — EventBridge scheduled scans, automated reports
+- [x] **Phase 1** — Foundation: Agent, Discovery, Diagrams, IaC, Dashboard, MCP, 12 skills
+- [x] **Phase 2** — Network Intelligence: Path tracing, connectivity diagnosis, SG chain analysis, topology diagrams
+- [x] **Phase 3** — Drift Detection: CFN drift, Terraform state drift, config baselines, compliance policies
+- [x] **Phase 4** — Resilience & Security: Backup/DR scoring, data classification, secrets hygiene, blast radius
+- [x] **Phase 5** — Platform Optimization: EKS, serverless, database optimization, modernization advisor
+- [x] **Phase 6** — Governance: Tag enforcement, quotas, multi-account governance, shadow IT detection
+- [ ] **Phase 7** — Continuous Monitoring: EventBridge scheduled scans, automated reports, Slack/Teams integration
+- [ ] **Phase 8** — Multi-tenant SaaS: Organization-wide scanning, role-based access, tenant isolation
 
 ## License
 

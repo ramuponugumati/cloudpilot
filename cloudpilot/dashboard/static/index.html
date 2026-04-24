@@ -9,7 +9,7 @@
         @font-face { font-family: 'Amazon Ember'; src: url('https://d1.awsstatic.com/webfonts/amazon-ember/AmazonEmber_Bd.3e05e37e3d0b8.woff2') format('woff2'); font-weight: 700; }
         @font-face { font-family: 'Amazon Ember'; src: url('https://d1.awsstatic.com/webfonts/amazon-ember/AmazonEmber_Lt.88ebd3e2efda.woff2') format('woff2'); font-weight: 300; }
     </style>
-    <link rel="stylesheet" href="/static/css/styles.css?v=43">
+    <link rel="stylesheet" href="/static/css/styles.css?v=44">
     <!-- Chart.js for cost analysis charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <!-- Mermaid.js for architecture diagrams -->
@@ -43,11 +43,14 @@
             <aside class="sidebar">
                 <div class="sidebar-section">
                     <h3>Quick Actions</h3>
-                    <button class="action-btn" data-action="Show me my architecture">🏗️ Architecture Map</button>
-                    <button class="action-btn" data-action="Find security issues">🛡️ Security Check</button>
-                    <button class="action-btn" data-action="Find zombie resources wasting money">🧟 Zombie Hunt</button>
-                    <button class="action-btn" data-action="Show cost optimization opportunities">💰 Cost Optimize</button>
-                    <button class="action-btn" data-action="Run backup and DR posture check">🔄 DR Readiness</button>
+                    <button class="action-btn" data-action="Show me my architecture" style="--btn-color:#2563eb">🗺️ Architecture Map</button>
+                    <button class="action-btn" data-action="Find security issues" style="--btn-color:#dc2626">🔒 Security Scan</button>
+                    <button class="action-btn" data-action="Find zombie resources wasting money" style="--btn-color:#7c3aed">👻 Zombie Hunt</button>
+                    <button class="action-btn" data-action="Show cost optimization opportunities" style="--btn-color:#d97706">📉 Cost Optimize</button>
+                    <button class="action-btn" data-action="Run backup and DR posture check" style="--btn-color:#0891b2">🛡️ DR Readiness</button>
+                    <button class="action-btn" data-action="Trace network path between two resources" style="--btn-color:#059669">🔀 Network Path</button>
+                    <button class="action-btn" data-action="Show me my network topology" style="--btn-color:#4f46e5">🕸️ Net Topology</button>
+                    <button class="action-btn" data-action="Check EKS cluster health and optimization" style="--btn-color:#be185d">☸️ EKS Health</button>
                 </div>
                 <div class="sidebar-section">
                     <h3>Suites</h3>

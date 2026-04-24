@@ -100,43 +100,26 @@ body {
     margin-bottom: 12px; letter-spacing: 1.2px; font-weight: 600;
 }
 
-/* Quick Action Buttons — colorful glowing boxes */
+/* Quick Action Buttons — light tinted pills with colored left accent */
 .action-btn {
     display: block; width: 100%; text-align: left;
-    background: var(--bg-card);
+    background: color-mix(in srgb, var(--btn-color, var(--accent)) 6%, #ffffff);
     color: var(--text-bright);
-    border: 1px solid var(--border);
+    border: 1px solid color-mix(in srgb, var(--btn-color, var(--accent)) 18%, transparent);
+    border-left: 3px solid var(--btn-color, var(--accent));
     border-radius: var(--radius-sm);
-    padding: 12px 14px; margin-bottom: 8px; cursor: pointer;
-    font-size: 13px; font-weight: 700;
-    transition: all var(--transition);
-    position: relative; overflow: hidden;
-}
-.action-btn::before {
-    content: ''; position: absolute; top: 0; left: 0;
-    width: 4px; height: 100%; border-radius: 4px 0 0 4px;
+    padding: 11px 14px; margin-bottom: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 600;
+    font-family: 'Amazon Ember', -apple-system, sans-serif;
     transition: all var(--transition);
 }
-/* Each action gets a unique glow color */
-.action-btn:nth-child(1)::before { background: var(--glow-cyan); }
-.action-btn:nth-child(2)::before { background: var(--glow-blue); }
-.action-btn:nth-child(3)::before { background: var(--glow-green); }
-.action-btn:nth-child(4)::before { background: var(--glow-red); }
-.action-btn:nth-child(5)::before { background: var(--glow-orange); }
-.action-btn:nth-child(6)::before { background: var(--glow-purple); }
-.action-btn:nth-child(7)::before { background: #ff4081; }
-.action-btn:nth-child(8)::before { background: #00bcd4; }
-
-.action-btn:nth-child(1):hover { border-color: var(--glow-cyan); box-shadow: 0 0 20px rgba(0,229,255,0.15), inset 0 0 20px rgba(0,229,255,0.05); }
-.action-btn:nth-child(2):hover { border-color: var(--glow-blue); box-shadow: 0 0 20px rgba(0,180,255,0.15), inset 0 0 20px rgba(0,180,255,0.05); }
-.action-btn:nth-child(3):hover { border-color: var(--glow-green); box-shadow: 0 0 20px rgba(0,230,118,0.15), inset 0 0 20px rgba(0,230,118,0.05); }
-.action-btn:nth-child(4):hover { border-color: var(--glow-red); box-shadow: 0 0 20px rgba(255,82,82,0.15), inset 0 0 20px rgba(255,82,82,0.05); }
-.action-btn:nth-child(5):hover { border-color: var(--glow-orange); box-shadow: 0 0 20px rgba(255,145,0,0.15), inset 0 0 20px rgba(255,145,0,0.05); }
-.action-btn:nth-child(6):hover { border-color: var(--glow-purple); box-shadow: 0 0 20px rgba(124,77,255,0.15), inset 0 0 20px rgba(124,77,255,0.05); }
-.action-btn:nth-child(7):hover { border-color: #ff4081; box-shadow: 0 0 20px rgba(255,64,129,0.15), inset 0 0 20px rgba(255,64,129,0.05); }
-.action-btn:nth-child(8):hover { border-color: #00bcd4; box-shadow: 0 0 20px rgba(0,188,212,0.15), inset 0 0 20px rgba(0,188,212,0.05); }
-
-.action-btn:hover { transform: translateX(4px); }
+.action-btn:hover {
+    background: color-mix(in srgb, var(--btn-color, var(--accent)) 14%, #ffffff);
+    border-color: color-mix(in srgb, var(--btn-color, var(--accent)) 40%, transparent);
+    border-left-color: var(--btn-color, var(--accent));
+    transform: translateX(4px);
+    box-shadow: 0 2px 12px color-mix(in srgb, var(--btn-color, var(--accent)) 15%, transparent);
+}
 
 /* Skill Tags — uniform grid with colorful bubbles */
 .skills-list {
