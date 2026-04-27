@@ -187,22 +187,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (realtimeBtn) {
         realtimeBtn.addEventListener('click', async () => {
+            if (realtimeBtn.disabled) return;
+
             if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
-                // Already connected — disconnect
-                realtimeWs.close();
-                realtimeWs = null;
-                liveSection.style.display = 'none';
-                realtimeBtn.textContent = '📡 Live Events';
-                Chat.addMessage('assistant', '📡 Real-time monitoring **stopped**.');
-                try { await API._fetch('/api/monitoring/realtime/stop', {method:'POST'}); } catch(e) {}
+                // Already connected — just inform
+                Chat.addMessage('assistant', '📡 Live events are already recording. Events appear in the sidebar feed.');
                 return;
             }
+
+            // Disable button immediately
+            realtimeBtn.disabled = true;
+            realtimeBtn.textContent = '⏳ Connecting...';
+            realtimeBtn.style.opacity = '0.6';
 
             // Start the server-side poller
             try {
                 await API._fetch('/api/monitoring/realtime/start?poll_interval=60', {method:'POST'});
             } catch(e) {
                 Chat.addMessage('assistant', `⚠️ Could not start real-time monitor: ${e.message}`);
+                realtimeBtn.disabled = false;
+                realtimeBtn.textContent = '📡 Live Events';
+                realtimeBtn.style.opacity = '1';
                 return;
             }
 
@@ -212,9 +217,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             realtimeWs.onopen = () => {
                 liveSection.style.display = 'block';
-                realtimeBtn.textContent = '🔴 Stop Live';
-                realtimeBtn.style.setProperty('--btn-color', '#dc2626');
-                Chat.addMessage('assistant', '📡 Real-time monitoring **active** — watching CloudTrail, Health Dashboard, and CloudWatch alarms. Events will appear in the sidebar.');
+                realtimeBtn.textContent = '🔴 Recording Live Events';
+                realtimeBtn.disabled = true;
+                realtimeBtn.style.opacity = '0.7';
+                Chat.addMessage('assistant', '📡 Real-time monitoring **started** — recording CloudTrail, Health Dashboard, and CloudWatch alarm events. Watch the sidebar for live updates.');
             };
 
             realtimeWs.onmessage = (msg) => {

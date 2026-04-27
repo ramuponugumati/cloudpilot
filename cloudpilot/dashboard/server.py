@@ -430,14 +430,21 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
     async def start_realtime(poll_interval: int = 60):
         if realtime._running:
             return {"status": "already_running", "clients": len(realtime._clients)}
-        try:
-            regions = get_regions(profile=app.state.profile)
-        except Exception:
-            regions = ["us-east-1"]
-        realtime.regions = regions
+        # Start immediately with default region, discover others in background
+        realtime.regions = ["us-east-1"]
         realtime.poll_interval = poll_interval
         asyncio.create_task(realtime.start())
-        return {"status": "started", "regions": regions, "poll_interval": poll_interval}
+
+        # Expand regions in background without blocking the response
+        async def _expand_regions():
+            try:
+                regions = await asyncio.to_thread(get_regions, profile=app.state.profile)
+                realtime.regions = regions
+            except Exception:
+                pass
+        asyncio.create_task(_expand_regions())
+
+        return {"status": "started", "regions": ["us-east-1"], "poll_interval": poll_interval}
 
     @app.post("/api/monitoring/realtime/stop")
     async def stop_realtime():
