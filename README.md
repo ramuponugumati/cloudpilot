@@ -298,6 +298,13 @@ cloudpilot skills                             # List all skills
 | `CLOUDPILOT_BEDROCK_REGION` | `us-east-1` | Bedrock region |
 | `CLOUDPILOT_MEMORY_REGION` | `us-east-1` | AgentCore Memory region |
 | `CLOUDPILOT_AGENT` | _(strands)_ | Set to `legacy` for raw Bedrock Converse |
+| `CLOUDPILOT_SLACK_WEBHOOK` | _(none)_ | Slack incoming webhook URL for scan notifications |
+| `CLOUDPILOT_TEAMS_WEBHOOK` | _(none)_ | Microsoft Teams incoming webhook URL |
+| `CLOUDPILOT_SNS_TOPIC` | _(none)_ | SNS topic ARN for scan notifications |
+| `CLOUDPILOT_WEBHOOK_URL` | _(none)_ | Generic webhook URL (receives JSON) |
+| `CLOUDPILOT_NOTIFY_SEVERITY` | `high` | Minimum severity to trigger notifications |
+| `CLOUDPILOT_NOTIFICATIONS` | `true` | Enable/disable notifications |
+| `CLOUDPILOT_HISTORY_DIR` | `.cloudpilot/history` | Directory for scan history persistence |
 
 ## Security
 
@@ -384,10 +391,10 @@ CloudPilot itself is open-source and free. The cost comes from the AWS services 
 
 ```bash
 pip install -e ".[dev]"
-pytest tests/ -v    # 122 tests (unit + property-based with Hypothesis)
+pytest tests/ -v    # 151 tests (unit + property-based with Hypothesis)
 ```
 
-Property-based tests cover: network path tracing (18 properties), drift detection (14 properties), backup/DR posture, secrets hygiene, EKS optimization, and tool executor dispatch.
+Property-based tests cover: network path tracing (18 properties), drift detection (14 properties), backup/DR posture, secrets hygiene, EKS optimization, tool executor dispatch, and continuous monitoring (history, notifications, scheduler).
 
 ---
 
@@ -399,7 +406,7 @@ Property-based tests cover: network path tracing (18 properties), drift detectio
 - [x] **Phase 4** — Resilience & Security: Backup/DR scoring, data classification, secrets hygiene, blast radius
 - [x] **Phase 5** — Platform Optimization: EKS, serverless, database optimization, modernization advisor
 - [x] **Phase 6** — Governance: Tag enforcement, quotas, multi-account governance, shadow IT detection
-- [ ] **Phase 7** — Continuous Monitoring: EventBridge scheduled scans, automated reports, Slack/Teams integration
+- [x] **Phase 7** — Continuous Monitoring: Scheduled scans, scan history, Slack/Teams/SNS notifications, real-time event streaming (CloudTrail, Health, CloudWatch alarms via WebSocket)
 - [ ] **Phase 8** — Multi-tenant SaaS: Organization-wide scanning, role-based access, tenant isolation
 
 ## License

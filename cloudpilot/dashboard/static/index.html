@@ -9,7 +9,7 @@
         @font-face { font-family: 'Amazon Ember'; src: url('https://d1.awsstatic.com/webfonts/amazon-ember/AmazonEmber_Bd.3e05e37e3d0b8.woff2') format('woff2'); font-weight: 700; }
         @font-face { font-family: 'Amazon Ember'; src: url('https://d1.awsstatic.com/webfonts/amazon-ember/AmazonEmber_Lt.88ebd3e2efda.woff2') format('woff2'); font-weight: 300; }
     </style>
-    <link rel="stylesheet" href="/static/css/styles.css?v=44">
+    <link rel="stylesheet" href="/static/css/styles.css?v=45">
     <!-- Chart.js for cost analysis charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <!-- Mermaid.js for architecture diagrams -->
@@ -60,6 +60,11 @@
                     <h3>Monitoring</h3>
                     <button class="action-btn" id="btn-history" style="--btn-color:#6366f1">📊 Scan History</button>
                     <button class="action-btn" id="btn-scheduler" style="--btn-color:#059669">⏰ Scheduler Status</button>
+                    <button class="action-btn" id="btn-realtime" style="--btn-color:#dc2626">📡 Live Events</button>
+                </div>
+                <div class="sidebar-section" id="live-events-section" style="display:none">
+                    <h3>Live Feed <span id="live-dot" class="live-dot"></span></h3>
+                    <div id="live-events" class="live-events"></div>
                 </div>
             </aside>
 
@@ -100,6 +105,6 @@
 
     <script src="/static/js/api.js?v=14"></script>
     <script src="/static/js/chat.js?v=14"></script>
-    <script src="/static/js/app.js?v=33"></script>
+    <script src="/static/js/app.js?v=34"></script>
 </body>
 </html>

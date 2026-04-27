@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Optional, List
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -404,5 +404,54 @@ def create_app(profile: Optional[str] = None, api_key: Optional[str] = None) -> 
     @app.get("/api/monitoring/suites")
     async def list_suites():
         return {name: skills for name, skills in SUITES.items()}
+
+    # --- Real-time Monitoring WebSocket ---
+    from cloudpilot.monitoring.realtime import RealtimeMonitor
+
+    realtime = RealtimeMonitor(profile=profile)
+    app.state.realtime = realtime
+
+    @app.websocket("/ws/realtime")
+    async def realtime_ws(websocket: WebSocket):
+        await websocket.accept()
+        await realtime.register(websocket)
+        try:
+            while True:
+                # Keep connection alive, listen for client messages (e.g., config changes)
+                data = await websocket.receive_text()
+                if data == "ping":
+                    await websocket.send_json({"type": "pong"})
+        except WebSocketDisconnect:
+            realtime.unregister(websocket)
+        except Exception:
+            realtime.unregister(websocket)
+
+    @app.post("/api/monitoring/realtime/start")
+    async def start_realtime(poll_interval: int = 60):
+        if realtime._running:
+            return {"status": "already_running", "clients": len(realtime._clients)}
+        try:
+            regions = get_regions(profile=app.state.profile)
+        except Exception:
+            regions = ["us-east-1"]
+        realtime.regions = regions
+        realtime.poll_interval = poll_interval
+        asyncio.create_task(realtime.start())
+        return {"status": "started", "regions": regions, "poll_interval": poll_interval}
+
+    @app.post("/api/monitoring/realtime/stop")
+    async def stop_realtime():
+        realtime.stop()
+        return {"status": "stopped"}
+
+    @app.get("/api/monitoring/realtime/status")
+    async def realtime_status():
+        return {
+            "running": realtime._running,
+            "clients": len(realtime._clients),
+            "regions": realtime.regions,
+            "poll_interval": realtime.poll_interval,
+            "buffer_size": len(realtime._event_buffer),
+        }
 
     return app

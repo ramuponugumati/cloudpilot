@@ -176,6 +176,89 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Real-time monitoring
+    let realtimeWs = null;
+    const realtimeBtn = document.getElementById('btn-realtime');
+    const liveSection = document.getElementById('live-events-section');
+    const liveEvents = document.getElementById('live-events');
+    const liveDot = document.getElementById('live-dot');
+    const sevEmoji = {critical:'🔴',high:'🟠',medium:'🟡',low:'🔵',info:'⚪'};
+    const typeIcons = {cloudtrail:'🔍',health:'🏥',alarm:'🔔',finding:'📋',heartbeat:'💓'};
+
+    if (realtimeBtn) {
+        realtimeBtn.addEventListener('click', async () => {
+            if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
+                // Already connected — disconnect
+                realtimeWs.close();
+                realtimeWs = null;
+                liveSection.style.display = 'none';
+                realtimeBtn.textContent = '📡 Live Events';
+                Chat.addMessage('assistant', '📡 Real-time monitoring **stopped**.');
+                try { await API._fetch('/api/monitoring/realtime/stop', {method:'POST'}); } catch(e) {}
+                return;
+            }
+
+            // Start the server-side poller
+            try {
+                await API._fetch('/api/monitoring/realtime/start?poll_interval=60', {method:'POST'});
+            } catch(e) {
+                Chat.addMessage('assistant', `⚠️ Could not start real-time monitor: ${e.message}`);
+                return;
+            }
+
+            // Connect WebSocket
+            const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            realtimeWs = new WebSocket(`${wsProto}//${location.host}/ws/realtime`);
+
+            realtimeWs.onopen = () => {
+                liveSection.style.display = 'block';
+                realtimeBtn.textContent = '🔴 Stop Live';
+                realtimeBtn.style.setProperty('--btn-color', '#dc2626');
+                Chat.addMessage('assistant', '📡 Real-time monitoring **active** — watching CloudTrail, Health Dashboard, and CloudWatch alarms. Events will appear in the sidebar.');
+            };
+
+            realtimeWs.onmessage = (msg) => {
+                try {
+                    const evt = JSON.parse(msg.data);
+                    if (evt.event_type === 'heartbeat') {
+                        // Just pulse the dot
+                        liveDot.style.animation = 'none';
+                        requestAnimationFrame(() => liveDot.style.animation = '');
+                        return;
+                    }
+                    // Add event to live feed
+                    const el = document.createElement('div');
+                    el.className = `live-event ${evt.severity}`;
+                    const icon = typeIcons[evt.event_type] || '📋';
+                    const emoji = sevEmoji[evt.severity] || '⚪';
+                    const time = new Date(evt.timestamp).toLocaleTimeString();
+                    el.innerHTML = `
+                        <div class="live-event-title">${emoji} ${icon} ${evt.title}</div>
+                        <div class="live-event-meta">
+                            <span class="live-event-type">${evt.event_type}</span>
+                            ${evt.region} · ${time}
+                        </div>
+                    `;
+                    liveEvents.prepend(el);
+                    // Cap at 50 events
+                    while (liveEvents.children.length > 50) {
+                        liveEvents.removeChild(liveEvents.lastChild);
+                    }
+                    // Flash critical/high events in chat
+                    if (evt.severity === 'critical') {
+                        Chat.addMessage('assistant', `🔴 **CRITICAL EVENT:** ${evt.title}\n${evt.description}\nRegion: ${evt.region} · Source: ${evt.source}`);
+                    }
+                } catch(e) {}
+            };
+
+            realtimeWs.onclose = () => {
+                liveSection.style.display = 'none';
+                realtimeBtn.textContent = '📡 Live Events';
+                realtimeBtn.style.setProperty('--btn-color', '#dc2626');
+            };
+        });
+    }
+
     // Health check
     try {
         await API.health();
