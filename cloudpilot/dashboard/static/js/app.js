@@ -178,6 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Real-time monitoring
     let realtimeWs = null;
+    let realtime_events_buffer = [];  // Store events for export
     const realtimeBtn = document.getElementById('btn-realtime');
     const liveSection = document.getElementById('live-events-section');
     const liveEvents = document.getElementById('live-events');
@@ -246,6 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                     `;
                     liveEvents.prepend(el);
+                    realtime_events_buffer.push(evt);  // Buffer for export
                     // Cap at 50 events
                     while (liveEvents.children.length > 50) {
                         liveEvents.removeChild(liveEvents.lastChild);
@@ -274,4 +276,101 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('status-indicator').style.background = '#ff5252';
         document.getElementById('status-text').textContent = 'Disconnected';
     }
+
+    // --- Export handlers ---
+    function downloadFile(filename, content, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function toCsv(rows, headers) {
+        const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        const lines = [headers.map(escape).join(',')];
+        for (const row of rows) {
+            lines.push(headers.map(h => escape(row[h])).join(','));
+        }
+        return lines.join('\n');
+    }
+
+    // Export live events as CSV
+    document.getElementById('btn-export-events')?.addEventListener('click', () => {
+        const events = (realtimeWs?._eventBuffer || []).length
+            ? realtimeWs._eventBuffer
+            : Array.from(document.querySelectorAll('.live-event')).map(el => ({
+                timestamp: el.querySelector('.live-event-meta')?.textContent?.trim() || '',
+                title: el.querySelector('.live-event-title')?.textContent?.trim() || '',
+                type: el.querySelector('.live-event-type')?.textContent?.trim() || '',
+            }));
+        // Use the monitor's event buffer if available
+        if (realtime_events_buffer.length > 0) {
+            const headers = ['timestamp', 'event_type', 'severity', 'title', 'description', 'source', 'region', 'resource_id'];
+            const csv = toCsv(realtime_events_buffer, headers);
+            downloadFile(`cloudpilot-events-${new Date().toISOString().slice(0,10)}.csv`, csv, 'text/csv');
+            Chat.addMessage('assistant', `⬇️ Exported **${realtime_events_buffer.length} live events** to CSV.`);
+        } else {
+            Chat.addMessage('assistant', 'No live events to export yet. Start the live feed first.');
+        }
+    });
+
+    // Export findings as CSV
+    document.getElementById('btn-export-findings-csv')?.addEventListener('click', async () => {
+        try {
+            const data = await API._fetch('/api/monitoring/history?limit=1');
+            if (data.length === 0) {
+                // Try getting findings from the agent's store via summary
+                Chat.addMessage('assistant', 'No scan history found. Run a scan first, then export.');
+                return;
+            }
+            const record = await API._fetch(`/api/monitoring/history/${data[0].id}`);
+            const findings = record.findings || [];
+            if (findings.length === 0) {
+                Chat.addMessage('assistant', 'Latest scan had no findings to export.');
+                return;
+            }
+            const headers = ['skill', 'title', 'severity', 'description', 'resource_id', 'region', 'monthly_impact', 'recommended_action'];
+            const csv = toCsv(findings, headers);
+            downloadFile(`cloudpilot-findings-${new Date().toISOString().slice(0,10)}.csv`, csv, 'text/csv');
+            Chat.addMessage('assistant', `⬇️ Exported **${findings.length} findings** from latest scan to CSV.`);
+        } catch (e) {
+            Chat.addMessage('assistant', `⚠️ Export failed: ${e.message}`);
+        }
+    });
+
+    // Export findings as JSON
+    document.getElementById('btn-export-findings-json')?.addEventListener('click', async () => {
+        try {
+            const data = await API._fetch('/api/monitoring/history?limit=1');
+            if (data.length === 0) {
+                Chat.addMessage('assistant', 'No scan history found. Run a scan first, then export.');
+                return;
+            }
+            const record = await API._fetch(`/api/monitoring/history/${data[0].id}`);
+            const json = JSON.stringify(record, null, 2);
+            downloadFile(`cloudpilot-scan-${data[0].id}.json`, json, 'application/json');
+            Chat.addMessage('assistant', `⬇️ Exported full scan record **${data[0].id}** as JSON.`);
+        } catch (e) {
+            Chat.addMessage('assistant', `⚠️ Export failed: ${e.message}`);
+        }
+    });
+
+    // Export chat transcript
+    document.getElementById('btn-export-chat')?.addEventListener('click', () => {
+        const messages = Chat._history || [];
+        if (messages.length === 0) {
+            Chat.addMessage('assistant', 'No chat messages to export.');
+            return;
+        }
+        let md = `# CloudPilot Chat Transcript\n# Exported: ${new Date().toLocaleString()}\n\n`;
+        for (const msg of messages) {
+            const label = msg.role === 'user' ? '**You:**' : '**CloudPilot:**';
+            md += `${label}\n${msg.content}\n\n---\n\n`;
+        }
+        downloadFile(`cloudpilot-chat-${new Date().toISOString().slice(0,10)}.md`, md, 'text/markdown');
+        Chat.addMessage('assistant', `⬇️ Exported **${messages.length} messages** as Markdown.`);
+    });
 });

@@ -9,7 +9,7 @@
         @font-face { font-family: 'Amazon Ember'; src: url('https://d1.awsstatic.com/webfonts/amazon-ember/AmazonEmber_Bd.3e05e37e3d0b8.woff2') format('woff2'); font-weight: 700; }
         @font-face { font-family: 'Amazon Ember'; src: url('https://d1.awsstatic.com/webfonts/amazon-ember/AmazonEmber_Lt.88ebd3e2efda.woff2') format('woff2'); font-weight: 300; }
     </style>
-    <link rel="stylesheet" href="/static/css/styles.css?v=45">
+    <link rel="stylesheet" href="/static/css/styles.css?v=46">
     <!-- Chart.js for cost analysis charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <!-- Mermaid.js for architecture diagrams -->
@@ -64,6 +64,7 @@
                 </div>
                 <div class="sidebar-section" id="live-events-section" style="display:none">
                     <h3>Live Feed <span id="live-dot" class="live-dot"></span></h3>
+                    <button class="export-btn" id="btn-export-events" title="Export events as CSV">⬇️ Export CSV</button>
                     <div id="live-events" class="live-events"></div>
                 </div>
             </aside>
@@ -91,6 +92,11 @@
 
                 <!-- Input Area -->
                 <div class="chat-input-area">
+                    <div class="export-bar">
+                        <button class="export-btn" id="btn-export-findings-csv" title="Export findings as CSV">⬇️ Export Findings CSV</button>
+                        <button class="export-btn" id="btn-export-findings-json" title="Export findings as JSON">📋 Export JSON</button>
+                        <button class="export-btn" id="btn-export-chat" title="Export chat transcript">💬 Export Chat</button>
+                    </div>
                     <div class="input-wrapper">
                         <textarea id="chat-input" placeholder="Ask CloudPilot anything about your AWS infrastructure..." rows="1"></textarea>
                         <button id="btn-send" class="btn-send" title="Send">
@@ -105,6 +111,6 @@
 
     <script src="/static/js/api.js?v=14"></script>
     <script src="/static/js/chat.js?v=15"></script>
-    <script src="/static/js/app.js?v=34"></script>
+    <script src="/static/js/app.js?v=36"></script>
 </body>
 </html>
